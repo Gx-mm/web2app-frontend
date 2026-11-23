@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Web2App Studio — Instant Website to Android APK Builder</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #050811;
+      --surface: rgba(15, 23, 42, 0.65);
+      --border: rgba(255, 255, 255, 0.08);
+      --accent: #38bdf8;
+      --accent-2: #818cf8;
+      --success: #10b981;
+      --danger: #ef4444;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* Interactive Particle Canvas */
+    #particles {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    /* Ambient Glow Orbs */
+    .glow-orb {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(120px);
+      z-index: 0;
+      pointer-events: none;
+      opacity: 0.45;
+      animation: floatOrb 12s ease-in-out infinite alternate;
+    }
+    .orb-1 { width: 420px; height: 420px; background: #0284c7; top: -100px; left: -100px; }
+    .orb-2 { width: 380px; height: 380px; background: #4f46e5; bottom: -100px; right: -80px; animation-delay: -5s; }
+
+    @keyframes floatOrb {
+      0% { transform: translate(0, 0) scale(1); }
+      100% { transform: translate(40px, 30px) scale(1.1); }
+    }
+
+    /* Navbar */
+    nav {
+      position: relative;
+      z-index: 10;
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 22px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 800;
+      font-size: 1.25rem;
+      letter-spacing: -0.5px;
+    }
+
+    .brand-badge {
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: #030712;
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-size: 0.72rem;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .nav-pill {
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      color: var(--accent);
+      padding: 7px 14px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    /* Main Container */
+    .container {
+      position: relative;
+      z-index: 10;
+      max-width: 1180px;
+      margin: 10px auto 60px;
+      padding: 0 24px;
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 40px;
+      align-items: center;
+    }
+
+    @media (max-width: 900px) {
+      .container { grid-template-columns: 1fr; gap: 32px; }
+    }
+
+    /* Hero Text */
+    .hero-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border);
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      color: var(--accent);
+      margin-bottom: 16px;
+      animation: fadeUp 0.6s ease both;
+    }
+
+    .pulse-dot {
+      width: 8px; height: 8px;
+      background: var(--success);
+      border-radius: 50%;
+      box-shadow: 0 0 10px var(--success);
+      animation: pulse 1.8s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.4); opacity: 0.5; }
+    }
+
+    h1 {
+      font-size: clamp(2rem, 4vw, 3rem);
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: -1px;
+      margin-bottom: 14px;
+      animation: fadeUp 0.7s ease both;
+    }
+
+    h1 span {
+      background: linear-gradient(90deg, #38bdf8, #818cf8, #c084fc);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-sub {
+      color: var(--muted);
+      font-size: 1rem;
+      line-height: 1.6;
+      margin-bottom: 28px;
+      max-width: 520px;
+      animation: fadeUp 0.8s ease both;
+    }
+
+    /* Glass Form Card */
+    .builder-card {
+      background: var(--surface);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      padding: 28px;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6);
+      animation: fadeUp 0.9s ease both;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    @media (max-width: 540px) {
+      .grid-2 { grid-template-columns: 1fr; }
+    }
+
+    .field { margin-bottom: 16px; }
+
+    label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #cbd5e1;
+      margin-bottom: 7px;
+    }
+
+    label span.req { color: var(--accent); font-weight: 500; font-size: 0.75rem; }
+
+    input[type="text"],
+    input[type="url"] {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(2, 6, 23, 0.7);
+      color: #fff;
+      font-size: 0.92rem;
+      transition: all 0.25s ease;
+      outline: none;
+    }
+
+    input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
+    }
+
+    /* Custom File Dropzone */
+    .dropzone {
+      border: 1.5px dashed rgba(56, 189, 248, 0.35);
+      background: rgba(2, 6, 23, 0.5);
+      border-radius: 14px;
+      padding: 18px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      position: relative;
+    }
+
+    .dropzone:hover, .dropzone.dragover {
+      border-color: var(--accent);
+      background: rgba(56, 189, 248, 0.08);
+    }
+
+    .dropzone input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    .dz-content {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+
+    .dz-preview {
+      width: 44px;
+      height: 44px;
+      border-radius: 11px;
+      object-fit: cover;
+      background: #1e293b;
+      border: 1px solid rgba(255,255,255,0.15);
+      display: none;
+    }
+
+    .dz-text { text-align: left; }
+    .dz-title { font-size: 0.88rem; font-weight: 600; color: #e2e8f0; }
+    .dz-sub { font-size: 0.75rem; color: var(--muted); }
+
+    /* Shimmer Build Button */
+    .build-btn {
+      width: 100%;
+      padding: 15px;
+      border: none;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #0284c7, #4f46e5);
+      color: #fff;
+      font-weight: 700;
+      font-size: 1rem;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      box-shadow: 0 10px 25px rgba(37, 99, 235, 0.35);
+      margin-top: 6px;
+    }
+
+    .build-btn::after {
+      content: "";
+      position: absolute;
+      top: 0; left: -100%;
+      width: 60%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.28), transparent);
+      transform: skewX(-20deg);
+      animation: shimmer 3s infinite;
+    }
+
+    @keyframes shimmer {
+      0% { left: -100%; }
+      45%, 100% { left: 150%; }
+    }
+
+    .build-btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 14px 32px rgba(56, 189, 248, 0.45);
+    }
+
+    .build-btn:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    /* Live Progress Panel */
+    .status-panel {
+      display: none;
+      margin-top: 20px;
+      padding: 18px;
+      border-radius: 16px;
+      background: rgba(2, 6, 23, 0.85);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      animation: fadeUp 0.4s ease;
+    }
+
+    .progress-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.82rem;
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+
+    .progress-track {
+      width: 100%;
+      height: 8px;
+      background: #1e293b;
+      border-radius: 999px;
+      overflow: hidden;
+      margin-bottom: 12px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 12%;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+      border-radius: 999px;
+      transition: width 0.6s ease;
+    }
+
+    .step-log {
+      font-size: 0.82rem;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .download-btn {
+      display: none;
+      width: 100%;
+      text-align: center;
+      margin-top: 14px;
+      padding: 14px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: #022c22;
+      font-weight: 800;
+      font-size: 0.95rem;
+      text-decoration: none;
+      box-shadow: 0 10px 25px rgba(16, 185, 129, 0.35);
+      transition: transform 0.2s ease;
+    }
+
+    .download-btn:hover { transform: translateY(-2px); }
+
+    /* Right Side: 3D Live Phone Mockup */
+    .preview-stage {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      perspective: 1000px;
+      animation: fadeUp 1s ease both;
+    }
+
+    .phone-frame {
+      width: 285px;
+      height: 560px;
+      background: #090d16;
+      border-radius: 42px;
+      padding: 12px;
+      border: 2px solid rgba(255, 255, 255, 0.14);
+      box-shadow: 0 30px 70px rgba(0, 0, 0, 0.8), inset 0 0 20px rgba(56, 189, 248, 0.12);
+      transition: transform 0.15s ease-out;
+      position: relative;
+    }
+
+    .phone-notch {
+      width: 110px;
+      height: 22px;
+      background: #050811;
+      border-radius: 0 0 14px 14px;
+      margin: 0 auto;
+      position: relative;
+      z-index: 5;
+    }
+
+    .phone-screen {
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(180deg, #0f172a 0%, #020617 100%);
+      border-radius: 32px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 14px;
+      margin-top: -22px;
+    }
+
+    .phone-status {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.7rem;
+      color: var(--muted);
+      padding: 4px 8px;
+    }
+
+    .app-launcher {
+      text-align: center;
+      margin: auto 0;
+      padding: 20px;
+    }
+
+    .live-icon-box {
+      width: 84px;
+      height: 84px;
+      margin: 0 auto 14px;
+      border-radius: 22px;
+      background: linear-gradient(135deg, #1e293b, #0f172a);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      box-shadow: 0 15px 30px rgba(0,0,0,0.5);
+    }
+
+    .live-icon-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: none;
+    }
+
+    .live-icon-placeholder {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: var(--accent);
+    }
+
+    .live-app-name {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 4px;
+      word-break: break-word;
+    }
+
+    .live-app-pkg {
+      font-size: 0.72rem;
+      color: var(--accent);
+      background: rgba(56, 189, 248, 0.1);
+      padding: 4px 10px;
+      border-radius: 999px;
+      display: inline-block;
+      margin-bottom: 14px;
+    }
+
+    .live-url-pill {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      padding: 8px 12px;
+      border-radius: 10px;
+      font-size: 0.72rem;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .phone-footer {
+      text-align: center;
+      font-size: 0.7rem;
+      color: #475569;
+      padding-bottom: 6px;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(18px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+  <canvas id="particles"></canvas>
+  <div class="glow-orb orb-1"></div>
+  <div class="glow-orb orb-2"></div>
+
+  <nav>
+    <div class="brand">
+      <span>Web2App</span>
+      <span class="brand-badge">Studio</span>
+    </div>
+    <div class="nav-pill">Signed Release APK Engine</div>
+  </nav>
+
+  <main class="container">
+    <!-- Left Column: Form -->
+    <div>
+      <div class="hero-tag">
+        <span class="pulse-dot"></span>
+        Automated Cloud APK Compiler
+      </div>
+      <h1>Turn Any Website Into a <span>Native Android App</span></h1>
+      <p class="hero-sub">Apna website URL, app name aur PNG icon upload karein. Hamara cloud engine 3 minute me signed Release APK ZIP taiyar kar dega.</p>
+
+      <div class="builder-card">
+        <form id="buildForm">
+          <div class="field">
+            <label>Website URL <span class="req">HTTPS Recommended</span></label>
+            <input type="url" id="webUrl" placeholder="https://yourwebsite.com" required />
+          </div>
+
+          <div class="grid-2">
+            <div class="field">
+              <label>App Name <span class="req">Launcher Title</span></label>
+              <input type="text" id="appName" placeholder="My Store" maxlength="30" required />
+            </div>
+
+            <div class="field">
+              <label>Package ID <span class="req">Unique ID</span></label>
+              <input type="text" id="appId" placeholder="com.mystore.app" pattern="^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$" required />
+            </div>
+          </div>
+
+          <div class="field">
+            <label>App Icon <span class="req">Square PNG (512x512+)</span></label>
+            <div class="dropzone" id="dropzone">
+              <input type="file" id="appIcon" accept="image/png" required />
+              <div class="dz-content">
+                <img id="dzPreview" class="dz-preview" alt="Icon Preview" />
+                <div class="dz-text">
+                  <div class="dz-title" id="dzTitle">Click or drag PNG icon here</div>
+                  <div class="dz-sub" id="dzSub">Adaptive Android icons automatic generate honge</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <button type="submit" class="build-btn" id="submitBtn">
+            Build Android App Now (Free Beta)
+          </button>
+        </form>
+
+        <!-- Real-time Build Status -->
+        <div class="status-panel" id="statusPanel">
+          <div class="progress-header">
+            <span id="stageLabel">Initializing Build...</span>
+            <span id="percentLabel">10%</span>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill" id="progressFill"></div>
+          </div>
+          <div class="step-log" id="stepLog">Icon Supabase par upload ho raha hai...</div>
+          <a id="downloadLink" class="download-btn" download>Download Signed APK (.ZIP)</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column: Live 3D Phone Preview -->
+    <div class="preview-stage">
+      <div class="phone-frame" id="phoneCard">
+        <div class="phone-notch"></div>
+        <div class="phone-screen">
+          <div class="phone-status">
+            <span>9:41</span>
+            <span>5G • 100%</span>
+          </div>
+
+          <div class="app-launcher">
+            <div class="live-icon-box">
+              <img id="phoneIconImg" alt="Live App Icon" />
+              <span class="live-icon-placeholder" id="phoneIconText">A</span>
+            </div>
+            <div class="live-app-name" id="phoneAppName">My Store</div>
+            <div class="live-app-pkg" id="phoneAppPkg">com.mystore.app</div>
+            <div class="live-url-pill" id="phoneWebUrl">https://yourwebsite.com</div>
+          </div>
+
+          <div class="phone-footer">Live Android Launcher Preview</div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // ==========================================
+    // 1. APNI SUPABASE KEYS YAHAN PASTE KAREIN
+    // ==========================================
+    const SUPABASE_URL = "https://sklynsujtvczkvrvtmts.supabase.co";
+    const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_YVXYaNEkDlGddwYzXUwEGg_3mpQnyzt";
+
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+
+    // ==========================================
+    // 2. LIVE PHONE PREVIEW & FILE DROPZONE
+    // ==========================================
+    const webUrlInput = document.getElementById('webUrl');
+    const appNameInput = document.getElementById('appName');
+    const appIdInput = document.getElementById('appId');
+    const appIconInput = document.getElementById('appIcon');
+    const dropzone = document.getElementById('dropzone');
+
+    webUrlInput.addEventListener('input', (e) => {
+      document.getElementById('phoneWebUrl').innerText = e.target.value || 'https://yourwebsite.com';
+    });
+
+    appNameInput.addEventListener('input', (e) => {
+      const val = e.target.value.trim() || 'My Store';
+      document.getElementById('phoneAppName').innerText = val;
+      document.getElementById('phoneIconText').innerText = val.charAt(0).toUpperCase();
+    });
+
+    appIdInput.addEventListener('input', (e) => {
+      document.getElementById('phoneAppPkg').innerText = e.target.value.trim().toLowerCase() || 'com.mystore.app';
+    });
+
+    appIconInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const dzPreview = document.getElementById('dzPreview');
+        const phoneImg = document.getElementById('phoneIconImg');
+        dzPreview.src = ev.target.result;
+        dzPreview.style.display = 'block';
+        phoneImg.src = ev.target.result;
+        phoneImg.style.display = 'block';
+        document.getElementById('phoneIconText').style.display = 'none';
+        document.getElementById('dzTitle').innerText = file.name;
+        document.getElementById('dzSub').innerText = `${(file.size / 1024).toFixed(1)} KB • Ready to pack`;
+      };
+      reader.readAsDataURL(file);
+    });
+
+    ['dragover', 'dragleave', 'drop'].forEach(evt => {
+      dropzone.addEventListener(evt, (e) => {
+        e.preventDefault();
+        dropzone.classList.toggle('dragover', evt === 'dragover');
+      });
+    });
+
+    // ==========================================
+    // 3. 3D TILT EFFECT ON PHONE PREVIEW
+    // ==========================================
+    const phoneCard = document.getElementById('phoneCard');
+    document.addEventListener('mousemove', (e) => {
+      if (window.innerWidth < 900) return;
+      const x = (window.innerWidth / 2 - e.pageX) / 45;
+      const y = (window.innerHeight / 2 - e.pageY) / 45;
+      phoneCard.style.transform = `rotateY(${-x}deg) rotateX(${y}deg)`;
+    });
+
+    // ==========================================
+    // 4. INTERACTIVE PARTICLE BACKGROUND
+    // ==========================================
+    const canvas = document.getElementById('particles');
+    const ctx = canvas.getContext('2d');
+    let dots = [];
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    for (let i = 0; i < 48; i++) {
+      dots.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        r: Math.random() * 1.8 + 0.5,
+        vx: (Math.random() - 0.5) * 0.4,
+        vy: (Math.random() - 0.5) * 0.4
+      });
+    }
+
+    function animateParticles() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = 'rgba(56, 189, 248, 0.45)';
+      dots.forEach(d => {
+        d.x += d.vx;
+        d.y += d.vy;
+        if (d.x < 0 || d.x > canvas.width) d.vx *= -1;
+        if (d.y < 0 || d.y > canvas.height) d.vy *= -1;
+        ctx.beginPath();
+        ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      requestAnimationFrame(animateParticles);
+    }
+    animateParticles();
+
+    // ==========================================
+    // 5. BUILD SUBMISSION & LIVE POLLING
+    // ==========================================
+    const form = document.getElementById('buildForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const statusPanel = document.getElementById('statusPanel');
+    const stageLabel = document.getElementById('stageLabel');
+    const percentLabel = document.getElementById('percentLabel');
+    const progressFill = document.getElementById('progressFill');
+    const stepLog = document.getElementById('stepLog');
+    const downloadLink = document.getElementById('downloadLink');
+
+    function setProgress(pct, stage, log) {
+      progressFill.style.width = pct + '%';
+      percentLabel.innerText = pct + '%';
+      stageLabel.innerText = stage;
+      stepLog.innerText = log;
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      submitBtn.disabled = true;
+      statusPanel.style.display = 'block';
+      downloadLink.style.display = 'none';
+
+      try {
+        const web_url = webUrlInput.value.trim();
+        const app_name = appNameInput.value.trim();
+        const app_id = appIdInput.value.trim().toLowerCase();
+        const iconFile = appIconInput.files[0];
+
+        // Step A: Icon Upload
+        setProgress(20, 'Uploading Assets', 'App icon Supabase Storage me upload ho raha hai...');
+        const fileName = `${Date.now()}_${Math.random().toString(36).slice(2)}.png`;
+        const { error: uploadErr } = await sb.storage.from('icons').upload(fileName, iconFile, {
+          contentType: 'image/png'
+        });
+        if (uploadErr) throw uploadErr;
+
+        const { data: publicIcon } = sb.storage.from('icons').getPublicUrl(fileName);
+        const icon_url = publicIcon.publicUrl;
+
+        // Step B: Create DB Row
+        setProgress(35, 'Creating Build Job', 'Database me build request register ho rahi hai...');
+        const { data: buildRow, error: dbErr } = await sb
+          .from('builds')
+          .insert([{ app_name, app_id, web_url, status: 'building' }])
+          .select()
+          .single();
+        if (dbErr) throw dbErr;
+
+        // Step C: Trigger GitHub Actions
+        setProgress(48, 'Starting Cloud Runner', 'GitHub Actions APK builder start ho raha hai...');
+        const apiRes = await fetch('/api/trigger-build', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            build_id: buildRow.id,
+            app_name,
+            app_id,
+            web_url,
+            icon_url
+          })
+        });
+
+        if (!apiRes.ok) {
+          const errData = await apiRes.json();
+          throw new Error(errData.error || 'Build trigger failed');
+        }
+
+        // Step D: Smooth Fake Progress + Real Database Polling
+        let simulatedPct = 52;
+        const stages = [
+          'Capacitor Android project configure ho raha hai...',
+          'Adaptive app icons generate kiye ja rahe hain...',
+          'Gradle release APK compile ho raha hai...',
+          'Keystore se APK align aur sign ho raha hai...'
+        ];
+        let stageIdx = 0;
+
+        const pollInterval = setInterval(async () => {
+          if (simulatedPct < 92) {
+            simulatedPct += 4;
+            if (simulatedPct % 12 === 0 && stageIdx < stages.length - 1) stageIdx++;
+            setProgress(simulatedPct, 'Building Release APK', stages[stageIdx]);
+          }
+
+          const { data: current, error: pollErr } = await sb
+            .from('builds')
+            .select('status, download_url')
+            .eq('id', buildRow.id)
+            .single();
+
+          if (pollErr) return;
+
+          if (current.status === 'completed' && current.download_url) {
+            clearInterval(pollInterval);
+            setProgress(100, 'Build Completed!', 'Aapka signed Android APK ZIP taiyar hai.');
+            progressFill.style.background = '#10b981';
+            downloadLink.href = current.download_url;
+            downloadLink.style.display = 'block';
+            submitBtn.disabled = false;
+          } else if (current.status === 'failed') {
+            clearInterval(pollInterval);
+            setProgress(100, 'Build Failed', 'URL ya Package ID verify karke dubara try karein.');
+            progressFill.style.background = '#ef4444';
+            submitBtn.disabled = false;
+          }
+        }, 6000);
+
+      } catch (err) {
+        setProgress(100, 'Error Occurred', err.message);
+        progressFill.style.background = '#ef4444';
+        submitBtn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
