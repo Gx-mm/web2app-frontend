@@ -1,0 +1,1068 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Web2App Studio — Native Android App Builder</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-canvas: #F3F5F9;
+      --bg-surface: #FFFFFF;
+      --bg-subtle: #EAEFF6;
+      --border-line: #D8E0EC;
+      --border-strong: #0F172A;
+      --ink-primary: #0F172A;
+      --ink-body: #334155;
+      --ink-muted: #64748B;
+      --accent-blue: #1D4ED8;
+      --accent-blue-soft: #DBEAFE;
+      --success-green: #059669;
+      --success-soft: #D1FAE5;
+      --danger-red: #DC2626;
+      --danger-soft: #FEE2E2;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-canvas);
+      color: var(--ink-body);
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    /* Approved Typography System: Amelia Serif + Hello Superscript */
+    .font-amelia {
+      font-family: 'Playfair Display', Georgia, serif;
+      color: var(--ink-primary);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .font-hello {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.66rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: var(--ink-muted);
+      vertical-align: super;
+    }
+
+    /* Smooth Entrance Animations */
+    @keyframes revealUp {
+      from {
+        opacity: 0;
+        transform: translateY(16px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes pulseRing {
+      0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+      50% {
+        transform: scale(1.06);
+        opacity: 0.75;
+      }
+    }
+
+    @keyframes scanBeam {
+      0% {
+        top: 8%;
+      }
+      50% {
+        top: 88%;
+      }
+      100% {
+        top: 8%;
+      }
+    }
+
+    /* Top Editorial Navigation */
+    header {
+      background-color: var(--bg-surface);
+      border-bottom: 1px solid var(--border-line);
+      padding: 18px 28px;
+      position: sticky;
+      top: 0;
+      z-index: 30;
+    }
+
+    .header-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .brand-lockup {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+    }
+
+    .brand-name {
+      font-size: 1.55rem;
+    }
+
+    .brand-sup {
+      color: var(--accent-blue);
+    }
+
+    .engine-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background-color: var(--bg-subtle);
+      border: 1px solid var(--border-line);
+      padding: 6px 14px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--ink-primary);
+    }
+
+    .live-dot {
+      width: 7px;
+      height: 7px;
+      background-color: var(--success-green);
+      display: inline-block;
+    }
+
+    /* Main Asymmetric Studio Grid */
+    .studio-wrapper {
+      max-width: 1200px;
+      width: 100%;
+      margin: 32px auto 64px;
+      padding: 0 24px;
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 32px;
+      align-items: start;
+    }
+
+    @media (max-width: 940px) {
+      .studio-wrapper {
+        grid-template-columns: 1fr;
+        margin-top: 20px;
+      }
+    }
+
+    /* Left Panel: Configuration Studio */
+    .studio-panel {
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-line);
+      padding: 36px;
+      animation: revealUp 0.55s ease both;
+    }
+
+    @media (max-width: 600px) {
+      .studio-panel {
+        padding: 24px 20px;
+      }
+    }
+
+    .hero-eyebrow {
+      margin-bottom: 8px;
+    }
+
+    .main-heading {
+      font-size: clamp(1.9rem, 3.4vw, 2.55rem);
+      line-height: 1.15;
+      margin-bottom: 12px;
+    }
+
+    .sub-copy {
+      font-size: 0.92rem;
+      line-height: 1.65;
+      color: var(--ink-body);
+      margin-bottom: 28px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--border-line);
+    }
+
+    .fields-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    @media (max-width: 640px) {
+      .fields-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .span-full {
+      grid-column: span 2;
+    }
+
+    @media (max-width: 640px) {
+      .span-full {
+        grid-column: span 1;
+      }
+    }
+
+    .field-block {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .field-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+    }
+
+    .field-label {
+      font-size: 0.98rem;
+    }
+
+    .text-control {
+      width: 100%;
+      background-color: var(--bg-canvas);
+      border: 1px solid var(--border-line);
+      color: var(--ink-primary);
+      padding: 14px 16px;
+      font-size: 0.94rem;
+      font-family: 'Inter', sans-serif;
+      outline: none;
+      transition: border-color 0.2s ease, background-color 0.2s ease;
+    }
+
+    .text-control::placeholder {
+      color: var(--ink-muted);
+    }
+
+    .text-control:focus {
+      background-color: var(--bg-surface);
+      border-color: var(--accent-blue);
+    }
+
+    /* Asset Upload Box */
+    .icon-uploader {
+      position: relative;
+      background-color: var(--bg-canvas);
+      border: 1.5px dashed var(--border-line);
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      cursor: pointer;
+      transition: border-color 0.2s ease, background-color 0.2s ease;
+    }
+
+    .icon-uploader:hover,
+    .icon-uploader.dragover {
+      border-color: var(--accent-blue);
+      background-color: var(--accent-blue-soft);
+    }
+
+    .icon-uploader input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    .uploader-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .thumb-preview {
+      width: 50px;
+      height: 50px;
+      object-fit: cover;
+      border: 1px solid var(--border-line);
+      background-color: var(--bg-surface);
+      display: none;
+    }
+
+    .uploader-title {
+      font-size: 0.96rem;
+      margin-bottom: 3px;
+    }
+
+    .uploader-sub {
+      font-size: 0.8rem;
+      color: var(--ink-muted);
+    }
+
+    .select-chip {
+      background-color: var(--bg-surface);
+      border: 1px solid var(--ink-primary);
+      color: var(--ink-primary);
+      padding: 8px 14px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      flex-shrink: 0;
+    }
+
+    /* Primary Build Trigger */
+    .build-footer {
+      margin-top: 26px;
+      padding-top: 22px;
+      border-top: 1px solid var(--border-line);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .primary-cta {
+      background-color: var(--ink-primary);
+      color: #FFFFFF;
+      border: none;
+      padding: 16px 34px;
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 1.08rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background-color 0.2s ease, transform 0.15s ease;
+      min-width: 250px;
+    }
+
+    .primary-cta:hover:not(:disabled) {
+      background-color: var(--accent-blue);
+      transform: translateY(-1px);
+    }
+
+    .primary-cta:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Right Panel: Interactive Phone Simulator (Preview + Live Build Progress) */
+    .phone-stage {
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-line);
+      padding: 32px 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      animation: revealUp 0.7s ease both;
+      position: sticky;
+      top: 90px;
+    }
+
+    .stage-caption {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding-bottom: 14px;
+      margin-bottom: 24px;
+      border-bottom: 1px solid var(--border-line);
+    }
+
+    .phone-chassis {
+      width: 296px;
+      height: 575px;
+      background-color: var(--ink-primary);
+      border-radius: 40px;
+      padding: 12px;
+      box-shadow: 0 24px 48px rgba(15, 23, 42, 0.16);
+      position: relative;
+      transition: transform 0.2s ease;
+    }
+
+    .phone-speaker {
+      width: 96px;
+      height: 20px;
+      background-color: var(--ink-primary);
+      border-radius: 0 0 12px 12px;
+      margin: 0 auto;
+      position: relative;
+      z-index: 5;
+    }
+
+    .phone-display {
+      width: 100%;
+      height: 100%;
+      background-color: var(--bg-canvas);
+      border-radius: 30px;
+      margin-top: -20px;
+      padding: 16px 18px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .phone-topbar {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--ink-muted);
+      padding: 4px 6px;
+    }
+
+    /* Phone Screen State 1: Live Launcher Preview */
+    .screen-center {
+      margin: auto 0;
+      text-align: center;
+      padding: 12px 6px;
+    }
+
+    .app-icon-tile {
+      width: 88px;
+      height: 88px;
+      margin: 0 auto 16px;
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-line);
+      border-radius: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+    }
+
+    .app-icon-tile img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: none;
+    }
+
+    .icon-initial {
+      font-size: 2rem;
+    }
+
+    /* Active Build Scanner Line inside Phone Icon */
+    .scan-line {
+      display: none;
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background-color: var(--accent-blue);
+      animation: scanBeam 1.8s ease-in-out infinite;
+    }
+
+    .phone-app-title {
+      font-size: 1.25rem;
+      margin-bottom: 4px;
+      word-break: break-word;
+    }
+
+    .phone-pkg-text {
+      font-size: 0.74rem;
+      font-family: monospace;
+      color: var(--accent-blue);
+      margin-bottom: 14px;
+    }
+
+    .phone-url-box {
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-line);
+      padding: 8px 12px;
+      font-size: 0.74rem;
+      color: var(--ink-body);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Live Build Telemetry inside Phone Screen */
+    .phone-build-hud {
+      display: none;
+      margin-top: 18px;
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-line);
+      padding: 14px;
+      text-align: left;
+      animation: revealUp 0.35s ease;
+    }
+
+    .hud-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 8px;
+    }
+
+    .hud-percent {
+      font-size: 1.25rem;
+      color: var(--accent-blue);
+    }
+
+    .hud-track {
+      width: 100%;
+      height: 6px;
+      background-color: var(--bg-subtle);
+      margin-bottom: 10px;
+      overflow: hidden;
+    }
+
+    .hud-fill {
+      height: 100%;
+      width: 8%;
+      background-color: var(--accent-blue);
+      transition: width 0.5s ease, background-color 0.3s ease;
+    }
+
+    .hud-status-msg {
+      font-size: 0.78rem;
+      line-height: 1.45;
+      color: var(--ink-primary);
+      font-weight: 500;
+    }
+
+    .phone-download-cta {
+      display: none;
+      width: 100%;
+      margin-top: 12px;
+      background-color: var(--success-green);
+      color: #FFFFFF;
+      text-decoration: none;
+      padding: 13px 16px;
+      font-family: 'Playfair Display', Georgia, serif;
+      font-weight: 700;
+      font-size: 0.98rem;
+      text-align: center;
+      transition: background-color 0.2s ease;
+    }
+
+    .phone-download-cta:hover {
+      background-color: var(--ink-primary);
+    }
+
+    .phone-bottom-note {
+      text-align: center;
+      padding-bottom: 4px;
+    }
+
+    /* Post-Build Step-by-Step Installation Guide Section */
+    .install-guide-section {
+      display: none;
+      max-width: 1200px;
+      width: 100%;
+      margin: 0 auto 72px;
+      padding: 0 24px;
+      animation: revealUp 0.6s ease both;
+    }
+
+    .guide-container {
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-line);
+      padding: 36px;
+    }
+
+    @media (max-width: 600px) {
+      .guide-container {
+        padding: 24px 18px;
+      }
+    }
+
+    .guide-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      flex-wrap: wrap;
+      gap: 12px;
+      padding-bottom: 20px;
+      margin-bottom: 28px;
+      border-bottom: 1px solid var(--border-line);
+    }
+
+    .guide-title {
+      font-size: 1.75rem;
+    }
+
+    .steps-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+    }
+
+    @media (max-width: 960px) {
+      .steps-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 560px) {
+      .steps-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .step-card {
+      background-color: var(--bg-canvas);
+      border: 1px solid var(--border-line);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .step-illustration {
+      width: 100%;
+      height: 130px;
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-line);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px;
+    }
+
+    .step-heading {
+      font-size: 1.12rem;
+      margin-bottom: 4px;
+    }
+
+    .step-desc {
+      font-size: 0.84rem;
+      line-height: 1.55;
+      color: var(--ink-body);
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-inner">
+      <div class="brand-lockup">
+        <span class="font-amelia brand-name">Web2App</span>
+        <sup class="font-hello brand-sup">Studio</sup>
+      </div>
+      <div class="engine-badge">
+        <span class="live-dot"></span>
+        Release APK Engine
+      </div>
+    </div>
+  </header>
+
+  <main class="studio-wrapper">
+    <!-- Left Column: App Builder Form -->
+    <section class="studio-panel">
+      <div class="hero-eyebrow">
+        <sup class="font-hello">01 / Instant Android Packaging</sup>
+      </div>
+      <h1 class="font-amelia main-heading">Convert Your Website Into a Native Android App</h1>
+      <p class="sub-copy">
+        Apna website URL, app name aur PNG icon upload karein. Hamara automated engine kuch hi minutes me signed Release APK taiyar kar dega.
+      </p>
+
+      <form id="buildForm">
+        <div class="fields-grid">
+          <div class="field-block span-full">
+            <div class="field-header">
+              <label for="webUrl" class="font-amelia field-label">Website URL</label>
+              <sup class="font-hello">HTTPS Recommended</sup>
+            </div>
+            <input type="url" id="webUrl" class="text-control" placeholder="https://yourwebsite.com" required />
+          </div>
+
+          <div class="field-block">
+            <div class="field-header">
+              <label for="appName" class="font-amelia field-label">App Name</label>
+              <sup class="font-hello">Launcher Title</sup>
+            </div>
+            <input type="text" id="appName" class="text-control" placeholder="My Store" maxlength="30" required />
+          </div>
+
+          <div class="field-block">
+            <div class="field-header">
+              <label for="appId" class="font-amelia field-label">Package ID</label>
+              <sup class="font-hello">Unique Identifier</sup>
+            </div>
+            <input type="text" id="appId" class="text-control" placeholder="com.mystore.app" pattern="^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$" required />
+          </div>
+
+          <div class="field-block span-full">
+            <div class="field-header">
+              <label for="appIcon" class="font-amelia field-label">App Icon (PNG)</label>
+              <sup class="font-hello">Square 512x512+</sup>
+            </div>
+            <div class="icon-uploader" id="dropzone">
+              <input type="file" id="appIcon" accept="image/png" required />
+              <div class="uploader-left">
+                <img id="dzPreview" class="thumb-preview" alt="Selected App Icon" />
+                <div>
+                  <div class="font-amelia uploader-title" id="dzTitle">Click or drop square PNG icon</div>
+                  <div class="uploader-sub" id="dzSub">Adaptive Android icons automatic generate honge</div>
+                </div>
+              </div>
+              <span class="select-chip">Choose PNG</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="build-footer">
+          <sup class="font-hello">Signed Release Build • Offline Screen Included</sup>
+          <button type="submit" class="primary-cta" id="submitBtn">
+            Build Android App
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Right Column: Premium Live Phone Preview & Build Progress Simulator -->
+    <aside class="phone-stage">
+      <div class="stage-caption">
+        <sup class="font-hello" id="phoneModeEyebrow">Live Device Preview</sup>
+        <sup class="font-hello" id="phoneTopBadge">Android 14+</sup>
+      </div>
+
+      <div class="phone-chassis" id="phoneChassis">
+        <div class="phone-speaker"></div>
+        <div class="phone-display">
+          <div class="phone-topbar">
+            <span>9:41</span>
+            <span>5G • 100%</span>
+          </div>
+
+          <div class="screen-center">
+            <div class="app-icon-tile" id="iconTile">
+              <img id="phoneIconImg" alt="Live App Logo" />
+              <span class="font-amelia icon-initial" id="phoneIconText">M</span>
+              <div class="scan-line" id="scanLine"></div>
+            </div>
+
+            <div class="font-amelia phone-app-title" id="phoneAppName">My Store</div>
+            <div class="phone-pkg-text" id="phoneAppPkg">com.mystore.app</div>
+            <div class="phone-url-box" id="phoneWebUrl">https://yourwebsite.com</div>
+
+            <!-- Live Virtual Build Progress Inside Phone -->
+            <div class="phone-build-hud" id="phoneBuildHud">
+              <div class="hud-top">
+                <sup class="font-hello" id="hudStageTitle">Building App</sup>
+                <span class="font-amelia hud-percent" id="hudPercent">10%</span>
+              </div>
+              <div class="hud-track">
+                <div class="hud-fill" id="hudFill"></div>
+              </div>
+              <div class="hud-status-msg" id="hudStatusMsg">Preparing your app package...</div>
+              <a id="downloadLink" class="phone-download-cta" download>Download App (.ZIP)</a>
+            </div>
+          </div>
+
+          <div class="phone-bottom-note">
+            <sup class="font-hello" id="phoneFooterTag">Interactive Launcher Simulator</sup>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <!-- Step-by-Step Illustrated Installation Guide (Appears after Build Completes) -->
+  <section class="install-guide-section" id="installGuideSection">
+    <div class="guide-container">
+      <div class="guide-header">
+        <div>
+          <sup class="font-hello">02 / Installation Walkthrough</sup>
+          <h2 class="font-amelia guide-title">Apne Phone Me App Kaise Install Karein</h2>
+        </div>
+        <sup class="font-hello">4 Easy Steps • Play Protect Verified</sup>
+      </div>
+
+      <div class="steps-grid">
+        <!-- Step 1 -->
+        <div class="step-card">
+          <div class="step-illustration">
+            <svg width="110" height="96" viewBox="0 0 110 96" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="18" y="14" width="74" height="68" rx="6" fill="#EAEFF6" stroke="#0F172A" stroke-width="2"/>
+              <path d="M18 26H92" stroke="#0F172A" stroke-width="2"/>
+              <rect x="34" y="38" width="42" height="30" rx="4" fill="#DBEAFE" stroke="#1D4ED8" stroke-width="2"/>
+              <path d="M55 38V68" stroke="#1D4ED8" stroke-width="2" stroke-dasharray="4 3"/>
+              <rect x="47" y="48" width="16" height="10" rx="2" fill="#1D4ED8"/>
+            </svg>
+          </div>
+          <sup class="font-hello">Step 01 • Extract Archive</sup>
+          <h3 class="font-amelia step-heading">ZIP File Extract Karein</h3>
+          <p class="step-desc">
+            Download ki gayi <strong>.ZIP</strong> file par File Manager me tap karein aur <strong>"Extract Here"</strong> select karein.
+          </p>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="step-card">
+          <div class="step-illustration">
+            <svg width="110" height="96" viewBox="0 0 110 96" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="30" y="12" width="50" height="72" rx="6" fill="#FFFFFF" stroke="#0F172A" stroke-width="2"/>
+              <rect x="41" y="26" width="28" height="28" rx="7" fill="#1D4ED8"/>
+              <path d="M49 41L55 47L61 41M55 33V46" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+              <rect x="39" y="62" width="32" height="8" rx="2" fill="#EAEFF6"/>
+            </svg>
+          </div>
+          <sup class="font-hello">Step 02 • Locate Installer</sup>
+          <h3 class="font-amelia step-heading">.APK File Par Tap Karein</h3>
+          <p class="step-desc">
+            Extract hue folder ke andar aapke app ke naam wali <strong>.APK</strong> file milegi, us par click karke installer open karein.
+          </p>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="step-card">
+          <div class="step-illustration">
+            <svg width="110" height="96" viewBox="0 0 110 96" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M55 14L83 26V48C83 66 71 79 55 84C39 79 27 66 27 48V26L55 14Z" fill="#D1FAE5" stroke="#059669" stroke-width="2.2"/>
+              <path d="M44 49L52 57L67 41" stroke="#059669" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <sup class="font-hello">Step 03 • Security Check</sup>
+          <h3 class="font-amelia step-heading">Play Protect Scan Karein</h3>
+          <p class="step-desc">
+            Agar screen par Play Protect prompt aaye, to <strong>"Scan app"</strong> ya <strong>"More details -> Install anyway"</strong> par tap karein.
+          </p>
+        </div>
+
+        <!-- Step 4 -->
+        <div class="step-card">
+          <div class="step-illustration">
+            <svg width="110" height="96" viewBox="0 0 110 96" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="33" y="10" width="44" height="76" rx="8" fill="#0F172A"/>
+              <rect x="37" y="16" width="36" height="64" rx="5" fill="#F3F5F9"/>
+              <rect x="46" y="34" width="18" height="18" rx="5" fill="#1D4ED8"/>
+              <rect x="44" y="58" width="22" height="5" rx="2" fill="#0F172A"/>
+              <circle cx="64" cy="34" r="5" fill="#059669"/>
+            </svg>
+          </div>
+          <sup class="font-hello">Step 04 • Launch App</sup>
+          <h3 class="font-amelia step-heading">Install & Open Karein</h3>
+          <p class="step-desc">
+            Installation complete hote hi <strong>"Open"</strong> dabayein. Aapka app custom icon ke saath Home Screen par ready hai.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    // ==========================================
+    // 1. SUPABASE CONFIGURATION
+    // ==========================================
+    const SUPABASE_URL = "https://sklynsujtvczkvrvtmts.supabase.co";
+    const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_YVXYaNEkDlGddwYzXUwEGg_3mpQnyzt";
+
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+
+    // ==========================================
+    // 2. LIVE PHONE PREVIEW & ICON UPLOADER
+    // ==========================================
+    const webUrlInput = document.getElementById('webUrl');
+    const appNameInput = document.getElementById('appName');
+    const appIdInput = document.getElementById('appId');
+    const appIconInput = document.getElementById('appIcon');
+    const dropzone = document.getElementById('dropzone');
+
+    webUrlInput.addEventListener('input', (e) => {
+      document.getElementById('phoneWebUrl').innerText = e.target.value.trim() || 'https://yourwebsite.com';
+    });
+
+    appNameInput.addEventListener('input', (e) => {
+      const val = e.target.value.trim() || 'My Store';
+      document.getElementById('phoneAppName').innerText = val;
+      document.getElementById('phoneIconText').innerText = val.charAt(0).toUpperCase();
+    });
+
+    appIdInput.addEventListener('input', (e) => {
+      document.getElementById('phoneAppPkg').innerText = e.target.value.trim().toLowerCase() || 'com.mystore.app';
+    });
+
+    appIconInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const dzPreview = document.getElementById('dzPreview');
+        const phoneImg = document.getElementById('phoneIconImg');
+        dzPreview.src = ev.target.result;
+        dzPreview.style.display = 'block';
+        phoneImg.src = ev.target.result;
+        phoneImg.style.display = 'block';
+        document.getElementById('phoneIconText').style.display = 'none';
+        document.getElementById('dzTitle').innerText = file.name;
+        document.getElementById('dzSub').innerText = `${(file.size / 1024).toFixed(1)} KB • PNG Ready`;
+      };
+      reader.readAsDataURL(file);
+    });
+
+    ['dragover', 'dragleave', 'drop'].forEach(evt => {
+      dropzone.addEventListener(evt, (e) => {
+        e.preventDefault();
+        dropzone.classList.toggle('dragover', evt === 'dragover');
+      });
+    });
+
+    // ==========================================
+    // 3. PHONE BUILD SIMULATOR & POLLING
+    // ==========================================
+    const form = document.getElementById('buildForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const phoneBuildHud = document.getElementById('phoneBuildHud');
+    const hudStageTitle = document.getElementById('hudStageTitle');
+    const hudPercent = document.getElementById('hudPercent');
+    const hudFill = document.getElementById('hudFill');
+    const hudStatusMsg = document.getElementById('hudStatusMsg');
+    const downloadLink = document.getElementById('downloadLink');
+    const scanLine = document.getElementById('scanLine');
+    const iconTile = document.getElementById('iconTile');
+    const phoneModeEyebrow = document.getElementById('phoneModeEyebrow');
+    const phoneFooterTag = document.getElementById('phoneFooterTag');
+    const installGuideSection = document.getElementById('installGuideSection');
+
+    function updatePhoneBuildHUD(pct, stageTitle, virtualMsg, color = '#1D4ED8') {
+      hudPercent.innerText = pct + '%';
+      hudPercent.style.color = color;
+      hudStageTitle.innerText = stageTitle;
+      hudFill.style.width = pct + '%';
+      hudFill.style.backgroundColor = color;
+      hudStatusMsg.innerText = virtualMsg;
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      submitBtn.disabled = true;
+      downloadLink.style.display = 'none';
+      installGuideSection.style.display = 'none';
+
+      // Activate Live Phone Build Mode
+      phoneBuildHud.style.display = 'block';
+      scanLine.style.display = 'block';
+      iconTile.style.animation = 'pulseRing 2s ease-in-out infinite';
+      phoneModeEyebrow.innerText = 'Live App Compilation';
+      phoneFooterTag.innerText = 'Packaging Native Android Binary';
+
+      // Smooth scroll to phone on mobile screens
+      if (window.innerWidth <= 940) {
+        document.getElementById('phoneChassis').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+
+      try {
+        const web_url = webUrlInput.value.trim();
+        const app_name = appNameInput.value.trim();
+        const app_id = appIdInput.value.trim().toLowerCase();
+        const iconFile = appIconInput.files[0];
+
+        // Virtual Step 1: Icon Asset Processing
+        updatePhoneBuildHUD(18, 'Step 1 • Assets', 'App logo aur adaptive launcher icons taiyar ho rahe hain...');
+        const fileName = `${Date.now()}_${Math.random().toString(36).slice(2)}.png`;
+        const { error: uploadErr } = await sb.storage.from('icons').upload(fileName, iconFile, {
+          contentType: 'image/png'
+        });
+        if (uploadErr) throw uploadErr;
+
+        const { data: publicIcon } = sb.storage.from('icons').getPublicUrl(fileName);
+        const icon_url = publicIcon.publicUrl;
+
+        // Virtual Step 2: App Manifest Setup
+        updatePhoneBuildHUD(32, 'Step 2 • Manifest', 'App name, package ID aur web engine configure ho raha hai...');
+        const { data: buildRow, error: dbErr } = await sb
+          .from('builds')
+          .insert([{ app_name, app_id, web_url, status: 'building' }])
+          .select()
+          .single();
+        if (dbErr) throw dbErr;
+
+        // Trigger Backend Builder
+        const apiRes = await fetch('/api/trigger-build', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            build_id: buildRow.id,
+            app_name,
+            app_id,
+            web_url,
+            icon_url
+          })
+        });
+
+        if (!apiRes.ok) {
+          const errData = await apiRes.json();
+          throw new Error(errData.error || 'App build start nahi ho paya');
+        }
+
+        // Virtual Progress Stages (No technical/third-party names)
+        let simulatedPct = 40;
+        const virtualStages = [
+          { title: 'Step 3 • Web Engine', msg: 'Aapki website ko native Android view se link kiya ja raha hai...' },
+          { title: 'Step 4 • Offline Guard', msg: 'Smart No-Internet screen aur auto-reconnect add ho raha hai...' },
+          { title: 'Step 5 • APK Packaging', msg: 'Android APK binary compile aur optimize ho rahi hai...' },
+          { title: 'Step 6 • Final Signing', msg: 'Release certificate se app sign aur ZIP pack ho raha hai...' }
+        ];
+        let stageIdx = 0;
+
+        const pollInterval = setInterval(async () => {
+          if (simulatedPct < 94) {
+            simulatedPct += 3;
+            if (simulatedPct >= 52 && simulatedPct < 66) stageIdx = 1;
+            else if (simulatedPct >= 66 && simulatedPct < 82) stageIdx = 2;
+            else if (simulatedPct >= 82) stageIdx = 3;
+
+            updatePhoneBuildHUD(simulatedPct, virtualStages[stageIdx].title, virtualStages[stageIdx].msg);
+          }
+
+          const { data: current, error: pollErr } = await sb
+            .from('builds')
+            .select('status, download_url')
+            .eq('id', buildRow.id)
+            .single();
+
+          if (pollErr) return;
+
+          if (current.status === 'completed' && current.download_url) {
+            clearInterval(pollInterval);
+            scanLine.style.display = 'none';
+            iconTile.style.animation = 'none';
+            phoneModeEyebrow.innerText = 'Build Ready';
+            phoneFooterTag.innerText = 'Signed Release APK Ready';
+
+            updatePhoneBuildHUD(100, 'Completed', 'Aapka app build ho gaya hai! Neeche se ZIP download karein.', '#059669');
+            downloadLink.href = current.download_url;
+            downloadLink.style.display = 'block';
+            installGuideSection.style.display = 'block';
+            submitBtn.disabled = false;
+          } else if (current.status === 'failed') {
+            clearInterval(pollInterval);
+            scanLine.style.display = 'none';
+            iconTile.style.animation = 'none';
+            phoneModeEyebrow.innerText = 'Build Stopped';
+
+            updatePhoneBuildHUD(100, 'Failed', 'Website URL ya Package ID check karke dubara try karein.', '#DC2626');
+            submitBtn.disabled = false;
+          }
+        }, 6000);
+
+      } catch (err) {
+        scanLine.style.display = 'none';
+        iconTile.style.animation = 'none';
+        updatePhoneBuildHUD(100, 'Error', err.message, '#DC2626');
+        submitBtn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
