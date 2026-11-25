@@ -1,0 +1,1593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>PDF viewer by Ravi — Premium PDF Reader, Editor & Signature Studio</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Strictly Loading ONLY the 10 Curated Fonts from Reference Image -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Allura&family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Great+Vibes&family=Montserrat:wght@400;500;600;700;800&family=Orbitron:wght@500;700;800&family=Pacifico&family=Playfair+Display:ital,wght@0,500;0,700;1,500&family=Poppins:wght@300;400;500;600;700&family=Raleway:wght@400;500;600;700&family=UnifrakturCook:wght@700&display=swap" rel="stylesheet">
+
+  <!-- PDF.js (Fast Client-Side Rendering & Text Extraction) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <!-- pdf-lib (Client-Side PDF Modification, Signature Embedding & Flattening) -->
+  <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+
+  <style>
+    :root {
+      --bg-alabaster: #f8fafc;
+      --bg-pure: #ffffff;
+      --ink-slate: #0f172a;
+      --ink-muted: #64748b;
+      --gold-primary: #d97706;
+      --gold-deep: #b45309;
+      --gold-light: #fef3c7;
+      --border-soft: #e2e8f0;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: var(--bg-alabaster);
+      color: var(--ink-slate);
+      font-family: 'Poppins', sans-serif;
+      overflow-x: hidden;
+    }
+
+    /* Strictly ONLY the 10 Curated Fonts */
+    .font-montserrat { font-family: 'Montserrat', sans-serif; }
+    .font-brittany { font-family: 'Allura', cursive; } /* Styled & labeled as Brittany Signature */
+    .font-playfair { font-family: 'Playfair Display', serif; }
+    .font-poppins { font-family: 'Poppins', sans-serif; }
+    .font-greatvibes { font-family: 'Great Vibes', cursive; }
+    .font-orbitron { font-family: 'Orbitron', sans-serif; }
+    .font-cormorant { font-family: 'Cormorant Garamond', serif; }
+    .font-pacifico { font-family: 'Pacifico', cursive; }
+    .font-raleway { font-family: 'Raleway', sans-serif; }
+    .font-unifraktur { font-family: 'UnifrakturCook', cursive; }
+
+    /* Metallic Gold Gradient Text & Buttons */
+    .gold-text {
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #92400e 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .gold-btn {
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 55%, #b45309 100%);
+      color: #ffffff;
+      font-weight: 700;
+      box-shadow: 0 6px 18px rgba(217, 119, 6, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+      transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
+    }
+    .gold-btn:active {
+      transform: scale(0.96);
+    }
+
+    /* 1-Second Splash Reveal Animations */
+    @keyframes logoSpringReveal {
+      0% {
+        opacity: 0;
+        transform: scale(0.76) translateY(12px);
+      }
+      65% {
+        opacity: 1;
+        transform: scale(1.03) translateY(0);
+      }
+      100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
+
+    @keyframes shimmerSweep {
+      0% { transform: translateX(-140%) skewX(-22deg); }
+      100% { transform: translateX(240%) skewX(-22deg); }
+    }
+
+    @keyframes splashFadeOut {
+      0% { opacity: 1; transform: scale(1); }
+      100% { opacity: 0; transform: scale(1.03); pointer-events: none; }
+    }
+
+    @keyframes slideUpView {
+      from { opacity: 0; transform: translateY(14px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .splash-logo-anim {
+      animation: logoSpringReveal 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    .splash-shimmer {
+      animation: shimmerSweep 0.85s ease-in-out 0.15s forwards;
+    }
+    .splash-exit {
+      animation: splashFadeOut 0.32s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+    .view-enter {
+      animation: slideUpView 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    /* Glass Header & Luxury Cards */
+    .glass-header {
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .pdf-card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+      transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .pdf-card:hover {
+      border-color: #f59e0b;
+      box-shadow: 0 10px 24px -6px rgba(217, 119, 6, 0.16);
+      transform: translateY(-2px);
+    }
+    .pdf-card:active {
+      transform: scale(0.985);
+    }
+
+    /* PDF Workspace & Overlays */
+    #pdf-page-container {
+      position: relative;
+      display: inline-block;
+      background: #ffffff;
+      border-radius: 8px;
+      box-shadow: 0 18px 45px rgba(15, 23, 42, 0.14), 0 0 0 1px #cbd5e1;
+      overflow: hidden;
+    }
+
+    .pdf-text-hitbox {
+      position: absolute;
+      border-radius: 3px;
+      z-index: 10;
+      transition: background 0.15s ease, outline 0.15s ease;
+    }
+    .edit-mode-enabled .pdf-text-hitbox {
+      cursor: pointer;
+      background: rgba(254, 243, 199, 0.32);
+      outline: 1px dashed rgba(217, 119, 6, 0.55);
+    }
+    .edit-mode-enabled .pdf-text-hitbox:hover {
+      background: rgba(253, 230, 138, 0.55);
+      outline: 1.5px solid #d97706;
+    }
+    .pdf-text-hitbox.is-edited {
+      background: #ffffff !important;
+      outline: 1.5px solid #d97706 !important;
+      display: flex;
+      align-items: center;
+      white-space: nowrap;
+      padding: 0 2px;
+    }
+
+    /* Draggable & Resizable Added Text / Signature Elements */
+    .placed-item {
+      position: absolute;
+      z-index: 25;
+      cursor: move;
+      user-select: none;
+      border: 1.5px dashed #d97706;
+      background: rgba(254, 243, 199, 0.25);
+      border-radius: 6px;
+      padding: 3px 6px;
+    }
+    .placed-item:hover {
+      box-shadow: 0 0 0 2px #f59e0b, 0 8px 20px rgba(15, 23, 42, 0.16);
+    }
+    .placed-delete-btn {
+      position: absolute;
+      top: -24px;
+      right: -2px;
+      background: #ffffff;
+      color: #e11d48;
+      border: 1px solid #fecdd3;
+      border-radius: 6px;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 1px 6px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+      cursor: pointer;
+    }
+    .placed-resize-dot {
+      position: absolute;
+      bottom: -6px;
+      right: -6px;
+      width: 14px;
+      height: 14px;
+      background: #d97706;
+      border: 2px solid #ffffff;
+      border-radius: 50%;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25);
+      cursor: nwse-resize;
+    }
+
+    /* Hide Scrollbar for Horizontal Toolbar */
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col select-none">
+
+  <!-- ===================================================================== -->
+  <!-- 1. 1-SECOND LOGO REVEAL SPLASH SCREEN (Pure White & Luxury Gold)      -->
+  <!-- ===================================================================== -->
+  <div id="splash-screen" class="fixed inset-0 z-[9999] bg-white flex flex-col items-center justify-center px-6">
+    <!-- Subtle Champagne Radial Glow -->
+    <div class="absolute inset-0 pointer-events-none" style="background: radial-gradient(circle at center, rgba(254, 243, 199, 0.55) 0%, rgba(255, 255, 255, 0) 65%);"></div>
+
+    <div class="relative splash-logo-anim flex flex-col items-center">
+      <!-- Golden P Monogram Emblem -->
+      <div class="relative w-20 h-20 rounded-3xl bg-gradient-to-br from-amber-400 via-amber-500 to-amber-700 flex items-center justify-center shadow-xl shadow-amber-500/30 overflow-hidden mb-4">
+        <span class="font-montserrat font-extrabold text-white text-5xl tracking-tighter">P</span>
+        <!-- Metallic Shimmer Sweep -->
+        <div class="splash-shimmer absolute inset-y-0 w-10 bg-gradient-to-r from-transparent via-white/55 to-transparent"></div>
+      </div>
+
+      <!-- Brand Title -->
+      <div class="flex items-baseline gap-1.5">
+        <span class="font-montserrat font-extrabold text-2xl sm:text-3xl text-slate-900 tracking-tight">PDF viewer</span>
+        <span class="font-montserrat font-extrabold text-2xl sm:text-3xl gold-text tracking-wide">by Ravi</span>
+      </div>
+
+      <p class="font-poppins text-xs font-medium text-amber-700 tracking-widest uppercase mt-2">
+        Ultra-Fast PDF Studio
+      </p>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-box" class="fixed bottom-5 left-1/2 -translate-x-1/2 z-[9000] flex flex-col items-center gap-2 pointer-events-none w-full max-w-xs px-4"></div>
+
+  <!-- ===================================================================== -->
+  <!-- 2. MAIN HOME SCREEN: PHONE PDF LIBRARY & INSTANT DEVICE SCANNER       -->
+  <!-- ===================================================================== -->
+  <div id="home-screen" class="flex-1 flex flex-col min-h-screen">
+
+    <!-- Top App Header -->
+    <header class="glass-header sticky top-0 z-30 px-4 sm:px-6 py-3.5">
+      <div class="max-w-4xl mx-auto flex items-center justify-between gap-3">
+        <!-- Brand Logo -->
+        <a href="https://ravikishan.infy.click/" target="_blank" rel="noopener noreferrer" class="flex items-center gap-2.5 group">
+          <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-400 via-amber-500 to-amber-700 flex items-center justify-center shadow-md shadow-amber-500/25">
+            <span class="font-montserrat font-extrabold text-white text-xl">P</span>
+          </div>
+          <div>
+            <div class="flex items-baseline gap-1 leading-none">
+              <span class="font-montserrat font-extrabold text-slate-900 text-base sm:text-lg">PDF viewer</span>
+              <span class="font-montserrat font-extrabold gold-text text-base sm:text-lg group-hover:underline">by Ravi</span>
+            </div>
+            <span class="text-[10px] font-poppins text-slate-500 font-medium">Ad-Free Phone PDF Manager</span>
+          </div>
+        </a>
+
+        <!-- Quick Import / Scan Device PDFs Button -->
+        <div class="flex items-center gap-2">
+          <button onclick="scanPhoneFolder()" class="px-3.5 py-2 rounded-full bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-900 text-xs font-montserrat font-bold flex items-center gap-1.5 transition shadow-sm">
+            <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
+            <span>Scan Folder</span>
+          </button>
+
+          <label for="multi-pdf-input" class="gold-btn cursor-pointer px-3.5 py-2 rounded-full text-xs font-montserrat flex items-center gap-1.5">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M12 4v16m8-8H4"/></svg>
+            <span>Add PDFs</span>
+          </label>
+          <input type="file" id="multi-pdf-input" accept="application/pdf" multiple class="hidden" />
+          <input type="file" id="folder-fallback-input" webkitdirectory directory multiple accept="application/pdf" class="hidden" />
+        </div>
+      </div>
+
+      <!-- Search Bar inside Header -->
+      <div class="max-w-4xl mx-auto mt-3">
+        <div class="relative">
+          <svg class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          <input type="text" id="pdf-search-input" oninput="filterPDFLibrary()" placeholder="Search all PDFs on your device..." class="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-100/80 border border-slate-200 focus:bg-white focus:border-amber-500 outline-none text-xs sm:text-sm font-poppins text-slate-800 transition" />
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Library Body -->
+    <main class="flex-1 max-w-4xl w-full mx-auto px-4 sm:px-6 py-5">
+
+      <!-- Device Storage Status & Quick Actions Banner -->
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+        <div class="flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+          <h2 class="font-montserrat font-bold text-sm sm:text-base text-slate-900">
+            All Device PDFs (<span id="pdf-count-badge" class="text-amber-700">0</span>)
+          </h2>
+        </div>
+
+        <button onclick="createAndAddSamplePDF()" class="text-xs font-montserrat font-semibold text-amber-700 hover:text-amber-800 bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-200 transition">
+          + Load Sample PDF
+        </button>
+      </div>
+
+      <!-- Empty / First-Launch Prompt Card (Shown if no PDFs imported yet) -->
+      <div id="empty-library-card" class="hidden bg-white rounded-2xl border-2 border-dashed border-amber-300 p-7 text-center mb-5 shadow-sm">
+        <div class="w-14 h-14 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center mx-auto mb-3">
+          <svg class="w-7 h-7 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        </div>
+        <h3 class="font-montserrat font-bold text-base sm:text-lg text-slate-900 mb-1">Load Your Phone's PDF Files</h3>
+        <p class="font-poppins text-xs text-slate-500 max-w-md mx-auto mb-5 leading-relaxed">
+          Tap <strong>Scan Folder</strong> to automatically fetch every PDF from your Downloads/Documents folder, or select multiple PDFs at once. They stay saved here for instant 1-tap access!
+        </p>
+        <div class="flex flex-wrap items-center justify-center gap-3">
+          <button onclick="scanPhoneFolder()" class="gold-btn px-5 py-2.5 rounded-full text-xs font-montserrat flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
+            <span>Scan Phone PDFs</span>
+          </button>
+          <button onclick="createAndAddSamplePDF()" class="px-5 py-2.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-montserrat font-semibold transition">
+            Try Sample Document
+          </button>
+        </div>
+      </div>
+
+      <!-- PDF Files List Container -->
+      <div id="pdf-list-container" class="space-y-3 pb-10">
+        <!-- PDF cards injected here dynamically -->
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="py-5 border-t border-slate-200 bg-white/80 text-center text-xs font-poppins text-slate-500">
+      All rights reserved by <a href="https://ravikishan.infy.click/" target="_blank" rel="noopener noreferrer" class="font-montserrat font-bold text-amber-700 hover:text-amber-600 underline decoration-amber-400 underline-offset-4 transition-colors">Ravi</a>
+    </footer>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- 3. FULL-SCREEN PDF READER, EDITOR & DOWNLOAD WORKSPACE                -->
+  <!-- ===================================================================== -->
+  <div id="reader-screen" class="hidden fixed inset-0 z-40 bg-slate-100 flex flex-col view-enter">
+
+    <!-- Reader Top Action Bar -->
+    <header class="glass-header px-3 sm:px-6 py-2.5 flex items-center justify-between gap-2 z-30 shadow-sm">
+      <!-- Left: Back to Phone PDF List + Title -->
+      <div class="flex items-center gap-2 min-w-0">
+        <button onclick="closeReaderToHome()" class="p-2 rounded-xl bg-slate-100 hover:bg-amber-50 text-slate-800 hover:text-amber-800 border border-slate-200 transition flex items-center gap-1 text-xs font-montserrat font-bold shrink-0">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M15 19l-7-7 7-7"/></svg>
+          <span>Files</span>
+        </button>
+        <div class="truncate">
+          <h1 id="active-pdf-title" class="font-montserrat font-bold text-xs sm:text-sm text-slate-900 truncate">Document.pdf</h1>
+          <p id="active-pdf-subtitle" class="font-poppins text-[10px] text-slate-500">Read Mode • Tap Edit to modify</p>
+        </div>
+      </div>
+
+      <!-- Right: Edit Toggle Button & Download Button -->
+      <div class="flex items-center gap-2 shrink-0">
+        <button id="toggle-edit-btn" onclick="toggleEditStudio()" class="px-3.5 py-2 rounded-full bg-amber-50 hover:bg-amber-100 border border-amber-400 text-amber-900 text-xs font-montserrat font-bold flex items-center gap-1.5 transition shadow-sm">
+          <svg class="w-3.5 h-3.5 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+          <span id="toggle-edit-label">Edit</span>
+        </button>
+
+        <button onclick="downloadModifiedPDF()" class="gold-btn px-3.5 py-2 rounded-full text-xs font-montserrat flex items-center gap-1.5">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+          <span>Download</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Edit Mode Luxury Toolbar (Hidden in Read Mode, Appears on Tap of "Edit") -->
+    <div id="edit-studio-bar" class="hidden bg-white border-b border-amber-200 px-3 py-2 flex items-center justify-between gap-2 overflow-x-auto no-scrollbar z-20 shadow-sm">
+      <div class="flex items-center gap-1.5">
+        <button id="subtool-edit-text" onclick="setSubTool('edit-text')" class="px-3 py-1.5 rounded-lg bg-amber-600 text-white text-xs font-montserrat font-semibold flex items-center gap-1.5 whitespace-nowrap shadow-sm">
+          <span>✏️ Edit Existing Text</span>
+        </button>
+
+        <button id="subtool-add-text" onclick="setSubTool('add-text')" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-amber-50 text-slate-800 text-xs font-montserrat font-semibold flex items-center gap-1.5 whitespace-nowrap transition">
+          <span>➕ Add New Text</span>
+        </button>
+
+        <button onclick="openSignatureStudio()" class="px-3 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-900 text-xs font-montserrat font-bold flex items-center gap-1.5 whitespace-nowrap transition">
+          <span>✒️ Digital Signature</span>
+        </button>
+      </div>
+
+      <button onclick="undoLastChange()" class="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-montserrat font-semibold whitespace-nowrap">
+        ↩ Undo
+      </button>
+    </div>
+
+    <!-- Contextual Hint Strip in Edit Mode -->
+    <div id="edit-hint-strip" class="hidden bg-amber-50/95 border-b border-amber-200 px-3 py-1.5 text-center text-[11px] font-poppins text-amber-900">
+      Tap any highlighted text on the page below to edit it in its matching font style.
+    </div>
+
+    <!-- Scrollable PDF Page Canvas Stage -->
+    <div id="reader-scroll-area" class="flex-1 overflow-auto p-4 sm:p-8 flex justify-center items-start bg-slate-200/70">
+      <div id="pdf-page-container">
+        <canvas id="pdf-main-canvas"></canvas>
+        <!-- Layer 1: Interactive Extracted PDF Text Hitboxes -->
+        <div id="pdf-text-layer" class="absolute inset-0"></div>
+        <!-- Layer 2: Added Custom Texts & Digital Signatures -->
+        <div id="pdf-custom-layer" class="absolute inset-0 pointer-events-none"></div>
+      </div>
+    </div>
+
+    <!-- Floating Bottom Page & Zoom Pill -->
+    <div class="fixed bottom-4 left-1/2 -translate-x-1/2 z-30 bg-white/95 backdrop-blur-md border border-slate-200 shadow-lg rounded-full px-3 py-1.5 flex items-center gap-3 text-xs font-montserrat">
+      <div class="flex items-center gap-1.5">
+        <button onclick="navigatePage(-1)" class="w-7 h-7 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-700 font-bold">◀</button>
+        <span class="font-semibold text-slate-900 px-1"><span id="page-num-display">1</span> / <span id="page-total-display">1</span></span>
+        <button onclick="navigatePage(1)" class="w-7 h-7 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-700 font-bold">▶</button>
+      </div>
+      <div class="h-4 w-[1px] bg-slate-200"></div>
+      <div class="flex items-center gap-1">
+        <button onclick="changeZoom(-0.15)" class="w-7 h-7 rounded-full hover:bg-slate-100 font-bold text-slate-700">−</button>
+        <button onclick="fitPageWidth()" class="px-2 py-1 rounded-full bg-amber-50 text-amber-800 font-bold text-[11px]" id="zoom-percent-btn">Fit</button>
+        <button onclick="changeZoom(0.15)" class="w-7 h-7 rounded-full hover:bg-slate-100 font-bold text-slate-700">+</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- 4. MODAL: TEXT EDITOR (STRICTLY USING ONLY THE 10 CURATED FONTS)      -->
+  <!-- ===================================================================== -->
+  <div id="text-editor-modal" class="hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-5 sm:p-6 border border-slate-200 shadow-2xl view-enter">
+      <div class="flex items-center justify-between mb-4">
+        <h3 id="text-editor-heading" class="font-montserrat font-bold text-base sm:text-lg text-slate-900">Edit Text</h3>
+        <button onclick="closeTextEditorModal()" class="text-slate-400 hover:text-slate-800 text-2xl leading-none">&times;</button>
+      </div>
+
+      <div class="space-y-4">
+        <div>
+          <label class="block text-[11px] font-montserrat font-bold text-amber-700 uppercase tracking-wider mb-1">Text Content</label>
+          <input type="text" id="modal-text-value" oninput="refreshTextModalPreview()" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 focus:border-amber-500 focus:bg-white outline-none text-slate-900 text-sm sm:text-base" placeholder="Type text..." />
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-[11px] font-montserrat font-bold text-amber-700 uppercase tracking-wider mb-1">Font (10 Curated)</label>
+            <select id="modal-font-select" onchange="refreshTextModalPreview()" class="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-300 focus:border-amber-500 outline-none text-slate-900 text-xs sm:text-sm">
+              <option value="Montserrat">Montserrat</option>
+              <option value="Brittany Signature">Brittany Signature</option>
+              <option value="Playfair Display">Playfair Display</option>
+              <option value="Poppins">Poppins</option>
+              <option value="Great Vibes">Great Vibes</option>
+              <option value="Orbitron">Orbitron</option>
+              <option value="Cormorant Garamond">Cormorant Garamond</option>
+              <option value="Pacifico">Pacifico</option>
+              <option value="Raleway">Raleway</option>
+              <option value="UnifrakturCook">UnifrakturCook</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-montserrat font-bold text-amber-700 uppercase tracking-wider mb-1">Size (px)</label>
+            <input type="number" id="modal-size-input" min="8" max="96" value="16" oninput="refreshTextModalPreview()" class="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-300 focus:border-amber-500 outline-none text-slate-900 text-sm font-montserrat" />
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between">
+          <div>
+            <label class="block text-[11px] font-montserrat font-bold text-amber-700 uppercase tracking-wider mb-1">Text Color</label>
+            <div class="flex items-center gap-2">
+              <button type="button" onclick="pickModalTextColor('#0f172a')" class="w-7 h-7 rounded-full bg-slate-900 border-2 border-amber-500"></button>
+              <button type="button" onclick="pickModalTextColor('#1d4ed8')" class="w-7 h-7 rounded-full bg-blue-700 border border-slate-300"></button>
+              <button type="button" onclick="pickModalTextColor('#b91c1c')" class="w-7 h-7 rounded-full bg-red-700 border border-slate-300"></button>
+              <button type="button" onclick="pickModalTextColor('#b45309')" class="w-7 h-7 rounded-full bg-amber-700 border border-slate-300"></button>
+              <input type="color" id="modal-color-input" value="#0f172a" onchange="refreshTextModalPreview()" class="w-7 h-7 rounded cursor-pointer border-0 bg-transparent" />
+            </div>
+          </div>
+
+          <div class="text-right">
+            <span class="block text-[10px] font-poppins text-slate-400 mb-1">Matched Style</span>
+            <span id="modal-font-badge" class="inline-block px-2.5 py-1 rounded-md bg-amber-50 border border-amber-300 text-amber-800 text-xs font-montserrat font-bold">Montserrat</span>
+          </div>
+        </div>
+
+        <!-- Live Preview Box -->
+        <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 min-h-[54px] flex items-center justify-center overflow-hidden">
+          <span id="modal-live-preview" class="text-slate-900">Preview</span>
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-1">
+          <button type="button" onclick="closeTextEditorModal()" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-montserrat font-semibold">Cancel</button>
+          <button type="button" onclick="saveTextModalChanges()" class="gold-btn px-5 py-2 rounded-xl text-xs font-montserrat">Apply Change</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- 5. MODAL: DIGITAL SIGNATURE STUDIO (DRAW / TYPE / UPLOAD PNG)         -->
+  <!-- ===================================================================== -->
+  <div id="signature-studio-modal" class="hidden fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-5 sm:p-6 border border-slate-200 shadow-2xl view-enter">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="font-montserrat font-bold text-base sm:text-lg text-slate-900 flex items-center gap-2">
+          <span class="text-amber-600">✒️</span> Digital Signature
+        </h3>
+        <button onclick="closeSignatureStudio()" class="text-slate-400 hover:text-slate-800 text-2xl leading-none">&times;</button>
+      </div>
+
+      <!-- 3 Tabs -->
+      <div class="flex gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 mb-4">
+        <button id="sig-btn-draw" onclick="selectSigTab('draw')" class="flex-1 py-2 rounded-lg text-xs font-montserrat font-bold bg-amber-600 text-white shadow-sm transition">Draw</button>
+        <button id="sig-btn-type" onclick="selectSigTab('type')" class="flex-1 py-2 rounded-lg text-xs font-montserrat font-bold text-slate-600 transition">Type Style</button>
+        <button id="sig-btn-upload" onclick="selectSigTab('upload')" class="flex-1 py-2 rounded-lg text-xs font-montserrat font-bold text-slate-600 transition">Upload PNG</button>
+      </div>
+
+      <!-- Tab 1: Draw -->
+      <div id="sig-view-draw" class="space-y-3">
+        <div class="relative rounded-xl overflow-hidden bg-slate-50 border-2 border-amber-400/70">
+          <canvas id="sig-draw-canvas" class="w-full h-44 touch-none cursor-crosshair block"></canvas>
+          <span class="absolute bottom-2 right-3 text-[10px] font-poppins text-slate-400 pointer-events-none">Sign here with finger or stylus</span>
+        </div>
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-montserrat font-semibold text-slate-600">Ink:</span>
+            <button onclick="changeSigColor('#0f172a')" class="w-6 h-6 rounded-full bg-slate-900 border-2 border-amber-500"></button>
+            <button onclick="changeSigColor('#1d4ed8')" class="w-6 h-6 rounded-full bg-blue-700 border border-slate-300"></button>
+            <button onclick="changeSigColor('#b45309')" class="w-6 h-6 rounded-full bg-amber-700 border border-slate-300"></button>
+          </div>
+          <button onclick="clearSigCanvas()" class="text-xs font-montserrat font-bold text-rose-600 underline">Clear Pad</button>
+        </div>
+      </div>
+
+      <!-- Tab 2: Type Calligraphy (Using Curated Fonts) -->
+      <div id="sig-view-type" class="hidden space-y-3">
+        <input type="text" id="sig-type-input" value="PDF viewer by Ravi" oninput="updateTypedSig()" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 focus:border-amber-500 outline-none text-slate-900 text-sm" placeholder="Your Full Name..." />
+        <select id="sig-type-font" onchange="updateTypedSig()" class="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs sm:text-sm">
+          <option value="Brittany Signature">Brittany Signature</option>
+          <option value="Great Vibes">Great Vibes</option>
+          <option value="Pacifico">Pacifico</option>
+          <option value="Playfair Display">Playfair Display</option>
+          <option value="Cormorant Garamond">Cormorant Garamond</option>
+          <option value="Montserrat">Montserrat</option>
+          <option value="Poppins">Poppins</option>
+          <option value="Raleway">Raleway</option>
+          <option value="Orbitron">Orbitron</option>
+          <option value="UnifrakturCook">UnifrakturCook</option>
+        </select>
+        <div class="h-32 rounded-xl bg-slate-50 border-2 border-amber-400/70 flex items-center justify-center p-3 overflow-hidden">
+          <span id="sig-type-preview" class="font-brittany text-4xl text-slate-900">PDF viewer by Ravi</span>
+        </div>
+      </div>
+
+      <!-- Tab 3: Upload PNG/JPG with Auto White Removal -->
+      <div id="sig-view-upload" class="hidden space-y-3">
+        <label for="sig-file-input" class="flex flex-col items-center justify-center h-32 rounded-xl border-2 border-dashed border-amber-400 bg-amber-50/40 hover:bg-amber-50 cursor-pointer p-4 text-center">
+          <span class="font-montserrat font-bold text-xs text-slate-800">Tap to choose Signature Photo (PNG / JPG)</span>
+          <span class="font-poppins text-[11px] text-slate-500 mt-1">White paper background is removed automatically</span>
+        </label>
+        <input type="file" id="sig-file-input" accept="image/png, image/jpeg" class="hidden" onchange="onSigFileSelected(event)" />
+        <div id="sig-upload-preview-wrap" class="hidden h-24 rounded-xl bg-slate-100 border border-slate-300 flex items-center justify-center p-2">
+          <img id="sig-upload-preview-img" class="max-h-full max-w-full object-contain" alt="Signature" />
+        </div>
+      </div>
+
+      <div class="flex items-center justify-end gap-2 mt-5">
+        <button onclick="closeSignatureStudio()" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-xs font-montserrat font-semibold">Cancel</button>
+        <button onclick="placeSignatureOnPage()" class="gold-btn px-5 py-2.5 rounded-xl text-xs font-montserrat">Insert Signature</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // =========================================================================
+    // 1. 1-SECOND LOGO REVEAL SPLASH CONTROLLER
+    // =========================================================================
+    window.addEventListener('DOMContentLoaded', () => {
+      initIndexedDB().then(() => {
+        loadSavedLibraryFromDB();
+      });
+
+      // Hold logo reveal cleanly for 1.0s, then fade out smoothly
+      setTimeout(() => {
+        const splash = document.getElementById('splash-screen');
+        if (splash) {
+          splash.classList.add('splash-exit');
+          setTimeout(() => splash.remove(), 340);
+        }
+      }, 1000);
+    });
+
+    // =========================================================================
+    // 2. STRICT 10 CURATED FONTS CONFIGURATION (ONLY THESE 10 FONTS ALLOWED)
+    // =========================================================================
+    const CURATED_FONTS = [
+      { name: 'Montserrat', cssFamily: "'Montserrat', sans-serif" },
+      { name: 'Brittany Signature', cssFamily: "'Allura', cursive" },
+      { name: 'Playfair Display', cssFamily: "'Playfair Display', serif" },
+      { name: 'Poppins', cssFamily: "'Poppins', sans-serif" },
+      { name: 'Great Vibes', cssFamily: "'Great Vibes', cursive" },
+      { name: 'Orbitron', cssFamily: "'Orbitron', sans-serif" },
+      { name: 'Cormorant Garamond', cssFamily: "'Cormorant Garamond', serif" },
+      { name: 'Pacifico', cssFamily: "'Pacifico', cursive" },
+      { name: 'Raleway', cssFamily: "'Raleway', sans-serif" },
+      { name: 'UnifrakturCook', cssFamily: "'UnifrakturCook', cursive" }
+    ];
+
+    function getFontStyle(name) {
+      return CURATED_FONTS.find(f => f.name === name) || CURATED_FONTS[0];
+    }
+
+    function matchCuratedFontFromPDF(rawFontName = '') {
+      const s = rawFontName.toLowerCase();
+      if (s.includes('script') || s.includes('brush') || s.includes('italic')) return 'Brittany Signature';
+      if (s.includes('times') || s.includes('playfair') || s.includes('georgia')) return 'Playfair Display';
+      if (s.includes('garamond') || s.includes('serif')) return 'Cormorant Garamond';
+      if (s.includes('orbitron') || s.includes('mono') || s.includes('courier')) return 'Orbitron';
+      if (s.includes('gothic') || s.includes('blackletter')) return 'UnifrakturCook';
+      if (s.includes('raleway')) return 'Raleway';
+      if (s.includes('poppins')) return 'Poppins';
+      return 'Montserrat';
+    }
+
+    // =========================================================================
+    // 3. PERSISTENT DEVICE PDF LIBRARY (INDEXEDDB + FOLDER SCANNER + APK HOOK)
+    // =========================================================================
+    let db = null;
+    let pdfLibraryList = []; // { id, name, size, pageCount, addedAt, bytes }
+
+    function initIndexedDB() {
+      return new Promise((resolve) => {
+        const req = indexedDB.open('PDFViewerByRaviStore', 1);
+        req.onupgradeneeded = (e) => {
+          const database = e.target.result;
+          if (!database.objectStoreNames.contains('pdfs')) {
+            database.createObjectStore('pdfs', { keyPath: 'id' });
+          }
+        };
+        req.onsuccess = (e) => {
+          db = e.target.result;
+          resolve();
+        };
+        req.onerror = () => resolve();
+      });
+    }
+
+    function savePDFRecordToDB(record) {
+      if (!db) return;
+      const tx = db.transaction('pdfs', 'readwrite');
+      tx.objectStore('pdfs').put(record);
+    }
+
+    function deletePDFRecordFromDB(id) {
+      if (!db) return;
+      const tx = db.transaction('pdfs', 'readwrite');
+      tx.objectStore('pdfs').delete(id);
+    }
+
+    function loadSavedLibraryFromDB() {
+      if (!db) return;
+      const tx = db.transaction('pdfs', 'readonly');
+      const req = tx.objectStore('pdfs').getAll();
+      req.onsuccess = () => {
+        pdfLibraryList = (req.result || []).sort((a, b) => b.addedAt - a.addedAt);
+        renderPDFLibraryUI();
+      };
+    }
+
+    // Capacitor / Android Native WebView Bridge Hook:
+    window.loadNativeAndroidPDFs = async function(nativeFiles = []) {
+      for (const nf of nativeFiles) {
+        const binary = atob(nf.base64Data);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+        await ingestPDFBytesToLibrary(nf.name, bytes);
+      }
+      showToast(`Synced ${nativeFiles.length} PDF(s) from device!`);
+    };
+
+    // Multi-file input handler
+    document.getElementById('multi-pdf-input').addEventListener('change', async (e) => {
+      const files = Array.from(e.target.files || []);
+      if (!files.length) return;
+      await processUploadedFileList(files);
+      e.target.value = '';
+    });
+
+    // Folder fallback input handler
+    document.getElementById('folder-fallback-input').addEventListener('change', async (e) => {
+      const files = Array.from(e.target.files || []).filter(f => f.name.toLowerCase().endsWith('.pdf'));
+      if (!files.length) {
+        showToast('No PDF files found in selected folder.');
+        return;
+      }
+      await processUploadedFileList(files);
+      e.target.value = '';
+    });
+
+    // One-Tap Folder Scanner
+    async function scanPhoneFolder() {
+      if ('showDirectoryPicker' in window) {
+        try {
+          const dirHandle = await window.showDirectoryPicker();
+          showToast('Scanning folder for all PDFs...');
+          const foundFiles = [];
+
+          async function traverseDir(handle) {
+            for await (const entry of handle.values()) {
+              if (entry.kind === 'file' && entry.name.toLowerCase().endsWith('.pdf')) {
+                foundFiles.push(await entry.getFile());
+              } else if (entry.kind === 'directory') {
+                try { await traverseDir(entry); } catch (_) {}
+              }
+            }
+          }
+
+          await traverseDir(dirHandle);
+          if (foundFiles.length > 0) {
+            await processUploadedFileList(foundFiles);
+          } else {
+            showToast('No PDF files found in that folder.');
+          }
+          return;
+        } catch (err) {
+          if (err.name === 'AbortError') return;
+        }
+      }
+      document.getElementById('folder-fallback-input').click();
+    }
+
+    async function processUploadedFileList(files) {
+      let addedCount = 0;
+      for (const file of files) {
+        const buffer = await file.arrayBuffer();
+        await ingestPDFBytesToLibrary(file.name, new Uint8Array(buffer));
+        addedCount++;
+      }
+      renderPDFLibraryUI();
+      showToast(`Added ${addedCount} PDF file(s) to your library!`);
+    }
+
+    async function ingestPDFBytesToLibrary(name, uint8Bytes) {
+      let pageCount = 1;
+      try {
+        const tempDoc = await pdfjsLib.getDocument({ data: uint8Bytes.slice(0) }).promise;
+        pageCount = tempDoc.numPages;
+      } catch (_) {}
+
+      const record = {
+        id: 'pdf_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+        name,
+        size: formatBytes(uint8Bytes.byteLength),
+        pageCount,
+        addedAt: Date.now(),
+        bytes: uint8Bytes
+      };
+
+      pdfLibraryList = pdfLibraryList.filter(item => item.name !== name);
+      pdfLibraryList.unshift(record);
+      savePDFRecordToDB(record);
+      renderPDFLibraryUI();
+      return record;
+    }
+
+    function formatBytes(bytes) {
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+      return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+    }
+
+    function filterPDFLibrary() {
+      renderPDFLibraryUI();
+    }
+
+    function renderPDFLibraryUI() {
+      const container = document.getElementById('pdf-list-container');
+      const emptyCard = document.getElementById('empty-library-card');
+      const countBadge = document.getElementById('pdf-count-badge');
+      const query = (document.getElementById('pdf-search-input').value || '').toLowerCase().trim();
+
+      const filtered = pdfLibraryList.filter(p => p.name.toLowerCase().includes(query));
+      countBadge.textContent = pdfLibraryList.length;
+
+      if (pdfLibraryList.length === 0) {
+        emptyCard.classList.remove('hidden');
+        container.innerHTML = '';
+        return;
+      } else {
+        emptyCard.classList.add('hidden');
+      }
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<div class="text-center py-10 text-xs font-poppins text-slate-500">No PDF matches "${query}"</div>`;
+        return;
+      }
+
+      container.innerHTML = filtered.map(pdf => {
+        const dateStr = new Date(pdf.addedAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+        return `
+          <div onclick="openPDFFromLibrary('${pdf.id}')" class="pdf-card rounded-2xl p-3.5 sm:p-4 flex items-center justify-between gap-3 cursor-pointer">
+            <div class="flex items-center gap-3.5 min-w-0">
+              <!-- Luxury Gold & Red PDF File Icon -->
+              <div class="w-12 h-14 rounded-xl bg-gradient-to-b from-amber-50 to-amber-100/80 border border-amber-300/80 flex flex-col items-center justify-center shrink-0 relative">
+                <span class="font-montserrat font-extrabold text-[10px] tracking-wider text-amber-800 bg-white px-1.5 py-0.5 rounded border border-amber-300 shadow-xs">PDF</span>
+                <span class="text-[9px] font-poppins text-amber-700 mt-1">${pdf.pageCount} pg</span>
+              </div>
+
+              <div class="min-w-0">
+                <h3 class="font-montserrat font-bold text-sm sm:text-base text-slate-900 truncate">${escapeHTML(pdf.name)}</h3>
+                <div class="flex items-center gap-2 text-[11px] font-poppins text-slate-500 mt-0.5">
+                  <span>${pdf.size}</span>
+                  <span>•</span>
+                  <span>${pdf.pageCount} Page${pdf.pageCount > 1 ? 's' : ''}</span>
+                  <span>•</span>
+                  <span>${dateStr}</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2 shrink-0">
+              <span class="hidden sm:inline-flex px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-[11px] font-montserrat font-bold">
+                Open & Edit
+              </span>
+              <button onclick="event.stopPropagation(); removePDFFromLibrary('${pdf.id}')" class="p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition" title="Remove from list">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function removePDFFromLibrary(id) {
+      pdfLibraryList = pdfLibraryList.filter(p => p.id !== id);
+      deletePDFRecordFromDB(id);
+      renderPDFLibraryUI();
+      showToast('Removed from library list.');
+    }
+
+    function escapeHTML(str) {
+      return str.replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+    }
+
+    // Generate a ready-to-edit Sample PDF & add it to the phone list
+    async function createAndAddSamplePDF() {
+      const { PDFDocument, StandardFonts, rgb } = PDFLib;
+      const doc = await PDFDocument.create();
+      const page = doc.addPage([595, 842]);
+      const bold = await doc.embedFont(StandardFonts.HelveticaBold);
+      const regular = await doc.embedFont(StandardFonts.Helvetica);
+
+      page.drawRectangle({ x: 40, y: 745, width: 515, height: 60, color: rgb(0.99, 0.96, 0.89) });
+      page.drawRectangle({ x: 40, y: 745, width: 5, height: 60, color: rgb(0.85, 0.47, 0.02) });
+      page.drawText('PDF VIEWER BY RAVI — OFFICIAL DOCUMENT', { x: 58, y: 778, size: 15, font: bold, color: rgb(0.06, 0.09, 0.16) });
+      page.drawText('Tap "Edit" on top-right to modify any text or sign below', { x: 58, y: 758, size: 10, font: regular, color: rgb(0.71, 0.33, 0.04) });
+
+      page.drawText('Name: Aarav Sharma', { x: 58, y: 695, size: 14, font: bold, color: rgb(0.06, 0.09, 0.16) });
+      page.drawText('Document ID: RV-2026-8841', { x: 58, y: 668, size: 12, font: regular, color: rgb(0.2, 0.25, 0.33) });
+      page.drawText('Amount Approved: Rs. 45,000/-', { x: 58, y: 641, size: 13, font: bold, color: rgb(0.06, 0.09, 0.16) });
+
+      page.drawText('Authorized Signature:', { x: 58, y: 420, size: 12, font: bold, color: rgb(0.06, 0.09, 0.16) });
+      page.drawLine({ start: { x: 58, y: 345 }, end: { x: 255, y: 345 }, thickness: 1, color: rgb(0.58, 0.64, 0.72) });
+
+      const bytes = await doc.save();
+      const record = await ingestPDFBytesToLibrary('PDF_Viewer_by_Ravi_Sample.pdf', bytes);
+      openPDFFromLibrary(record.id);
+    }
+
+    // =========================================================================
+    // 4. FULL-SCREEN PDF READER & EDITOR ENGINE
+    // =========================================================================
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+    let activePDFRecord = null;
+    let pdfDocument = null;
+    let activePageNum = 1;
+    let totalPageCount = 1;
+    let renderScale = 1.0;
+
+    let isEditMode = false;
+    let activeSubTool = 'edit-text';
+
+    let textEditsByPage = {};
+    let addedItemsByPage = {};
+    let actionHistory = [];
+    let modalEditState = null;
+
+    async function openPDFFromLibrary(id) {
+      const record = pdfLibraryList.find(p => p.id === id);
+      if (!record) return;
+
+      activePDFRecord = record;
+      textEditsByPage = {};
+      addedItemsByPage = {};
+      actionHistory = [];
+      activePageNum = 1;
+      isEditMode = false;
+
+      document.getElementById('active-pdf-title').textContent = record.name;
+      updateEditModeUI();
+
+      const loadingTask = pdfjsLib.getDocument({ data: record.bytes.slice(0) });
+      pdfDocument = await loadingTask.promise;
+      totalPageCount = pdfDocument.numPages;
+
+      document.getElementById('page-total-display').textContent = totalPageCount;
+      document.getElementById('reader-screen').classList.remove('hidden');
+
+      await fitPageWidth(false);
+    }
+
+    function closeReaderToHome() {
+      document.getElementById('reader-screen').classList.add('hidden');
+      pdfDocument = null;
+    }
+
+    function toggleEditStudio() {
+      isEditMode = !isEditMode;
+      updateEditModeUI();
+      if (isEditMode) {
+        showToast('Edit Mode ON! Tap any text on the PDF to edit.');
+      }
+    }
+
+    function updateEditModeUI() {
+      const btn = document.getElementById('toggle-edit-btn');
+      const label = document.getElementById('toggle-edit-label');
+      const studioBar = document.getElementById('edit-studio-bar');
+      const hintStrip = document.getElementById('edit-hint-strip');
+      const stage = document.getElementById('pdf-page-container');
+      const subtitle = document.getElementById('active-pdf-subtitle');
+
+      if (isEditMode) {
+        btn.classList.remove('bg-amber-50', 'text-amber-900');
+        btn.classList.add('bg-amber-600', 'text-white');
+        label.textContent = 'Done Editing';
+        subtitle.textContent = 'Edit Mode • Tap text or sign';
+        studioBar.classList.remove('hidden');
+        hintStrip.classList.remove('hidden');
+        stage.classList.add('edit-mode-enabled');
+      } else {
+        btn.classList.add('bg-amber-50', 'text-amber-900');
+        btn.classList.remove('bg-amber-600', 'text-white');
+        label.textContent = 'Edit';
+        subtitle.textContent = 'Read Mode • Tap Edit to modify';
+        studioBar.classList.add('hidden');
+        hintStrip.classList.add('hidden');
+        stage.classList.remove('edit-mode-enabled');
+      }
+    }
+
+    function setSubTool(tool) {
+      activeSubTool = tool;
+      const btnEdit = document.getElementById('subtool-edit-text');
+      const btnAdd = document.getElementById('subtool-add-text');
+      const hint = document.getElementById('edit-hint-strip');
+
+      if (tool === 'edit-text') {
+        btnEdit.className = 'px-3 py-1.5 rounded-lg bg-amber-600 text-white text-xs font-montserrat font-semibold flex items-center gap-1.5 whitespace-nowrap shadow-sm';
+        btnAdd.className = 'px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-amber-50 text-slate-800 text-xs font-montserrat font-semibold flex items-center gap-1.5 whitespace-nowrap transition';
+        hint.textContent = 'Tap any highlighted text on the page below to edit it in its matching font style.';
+      } else {
+        btnAdd.className = 'px-3 py-1.5 rounded-lg bg-amber-600 text-white text-xs font-montserrat font-semibold flex items-center gap-1.5 whitespace-nowrap shadow-sm';
+        btnEdit.className = 'px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-amber-50 text-slate-800 text-xs font-montserrat font-semibold flex items-center gap-1.5 whitespace-nowrap transition';
+        hint.textContent = 'Tap anywhere on the PDF page below to place new text at that spot.';
+      }
+    }
+
+    async function renderCurrentPDFPage() {
+      if (!pdfDocument) return;
+      const page = await pdfDocument.getPage(activePageNum);
+      const viewport = page.getViewport({ scale: renderScale });
+
+      const canvas = document.getElementById('pdf-main-canvas');
+      const ctx = canvas.getContext('2d');
+      const dpr = window.devicePixelRatio || 1;
+
+      canvas.width = Math.floor(viewport.width * dpr);
+      canvas.height = Math.floor(viewport.height * dpr);
+      canvas.style.width = `${Math.floor(viewport.width)}px`;
+      canvas.style.height = `${Math.floor(viewport.height)}px`;
+
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      await page.render({ canvasContext: ctx, viewport }).promise;
+
+      document.getElementById('page-num-display').textContent = activePageNum;
+      await renderInteractiveTextHitboxes(page, viewport);
+      renderAddedItemsLayer();
+    }
+
+    async function renderInteractiveTextHitboxes(page, viewport) {
+      const layer = document.getElementById('pdf-text-layer');
+      layer.innerHTML = '';
+
+      layer.onclick = (e) => {
+        if (!isEditMode || activeSubTool !== 'add-text') return;
+        const rect = layer.getBoundingClientRect();
+        const normX = (e.clientX - rect.left) / renderScale;
+        const normY = (e.clientY - rect.top) / renderScale;
+        openNewTextModal(normX, normY);
+      };
+
+      const content = await page.getTextContent();
+      if (!textEditsByPage[activePageNum]) textEditsByPage[activePageNum] = {};
+
+      content.items.forEach((item, idx) => {
+        if (!item.str || !item.str.trim()) return;
+
+        const tx = pdfjsLib.Util.transform(viewport.transform, item.transform);
+        const fontHeight = Math.hypot(tx[2], tx[3]);
+        const left = tx[4];
+        const top = tx[5] - fontHeight;
+        const width = item.width * renderScale;
+        const height = fontHeight * 1.18;
+
+        const itemId = `item_${idx}`;
+        const savedEdit = textEditsByPage[activePageNum][itemId];
+
+        const box = document.createElement('div');
+        box.className = 'pdf-text-hitbox';
+        box.style.left = `${left}px`;
+        box.style.top = `${top}px`;
+        box.style.minWidth = `${Math.max(width, 18)}px`;
+        box.style.height = `${height}px`;
+
+        if (savedEdit) {
+          const fStyle = getFontStyle(savedEdit.fontName);
+          box.classList.add('is-edited');
+          box.style.fontFamily = fStyle.cssFamily;
+          box.style.fontSize = `${savedEdit.fontSize * renderScale}px`;
+          box.style.color = savedEdit.color;
+          box.textContent = savedEdit.newText;
+        }
+
+        box.addEventListener('click', (e) => {
+          if (!isEditMode) return;
+          if (activeSubTool === 'add-text') return;
+          e.stopPropagation();
+
+          const matchedFont = savedEdit ? savedEdit.fontName : matchCuratedFontFromPDF(item.fontName);
+          const baseSize = savedEdit ? savedEdit.fontSize : Math.max(10, Math.round(fontHeight / renderScale));
+
+          openReplaceTextModal({
+            pageNum: activePageNum,
+            itemId,
+            text: savedEdit ? savedEdit.newText : item.str,
+            fontName: matchedFont,
+            fontSize: baseSize,
+            color: savedEdit ? savedEdit.color : '#0f172a',
+            normX: left / renderScale,
+            normY: top / renderScale,
+            normW: width / renderScale,
+            normH: height / renderScale
+          });
+        });
+
+        layer.appendChild(box);
+      });
+    }
+
+    function navigatePage(delta) {
+      const next = activePageNum + delta;
+      if (next >= 1 && next <= totalPageCount) {
+        activePageNum = next;
+        renderCurrentPDFPage();
+      }
+    }
+
+    function changeZoom(delta) {
+      renderScale = Math.min(2.4, Math.max(0.45, +(renderScale + delta).toFixed(2)));
+      document.getElementById('zoom-percent-btn').textContent = `${Math.round(renderScale * 100)}%`;
+      renderCurrentPDFPage();
+    }
+
+    async function fitPageWidth(notify = true) {
+      if (!pdfDocument) return;
+      const page = await pdfDocument.getPage(activePageNum);
+      const baseViewport = page.getViewport({ scale: 1 });
+      const scrollArea = document.getElementById('reader-scroll-area');
+      const availWidth = Math.max(280, scrollArea.clientWidth - 36);
+      renderScale = Math.min(2.0, Math.max(0.45, +(availWidth / baseViewport.width).toFixed(2)));
+      document.getElementById('zoom-percent-btn').textContent = 'Fit';
+      await renderCurrentPDFPage();
+      if (notify) showToast('Fitted page to screen width');
+    }
+
+    function undoLastChange() {
+      const last = actionHistory.pop();
+      if (!last) {
+        showToast('Nothing to undo');
+        return;
+      }
+      if (last.type === 'replace') {
+        if (last.previousValue) {
+          textEditsByPage[last.pageNum][last.itemId] = last.previousValue;
+        } else {
+          delete textEditsByPage[last.pageNum][last.itemId];
+        }
+        renderCurrentPDFPage();
+      } else if (last.type === 'add') {
+        addedItemsByPage[last.pageNum] = (addedItemsByPage[last.pageNum] || []).filter(i => i.id !== last.id);
+        renderAddedItemsLayer();
+      }
+      showToast('Undid last change');
+    }
+
+    // =========================================================================
+    // 5. TEXT EDITOR MODAL LOGIC (STRICTLY 10 CURATED FONTS)
+    // =========================================================================
+    function openReplaceTextModal(data) {
+      modalEditState = { kind: 'replace', ...data };
+      document.getElementById('text-editor-heading').textContent = 'Edit Selected Text';
+      document.getElementById('modal-text-value').value = data.text;
+      document.getElementById('modal-font-select').value = data.fontName;
+      document.getElementById('modal-size-input').value = data.fontSize;
+      document.getElementById('modal-color-input').value = data.color;
+      refreshTextModalPreview();
+      document.getElementById('text-editor-modal').classList.remove('hidden');
+    }
+
+    function openNewTextModal(normX, normY) {
+      modalEditState = { kind: 'add', pageNum: activePageNum, normX, normY };
+      document.getElementById('text-editor-heading').textContent = 'Add New Text';
+      document.getElementById('modal-text-value').value = 'PDF viewer by Ravi';
+      document.getElementById('modal-font-select').value = 'Montserrat';
+      document.getElementById('modal-size-input').value = 18;
+      document.getElementById('modal-color-input').value = '#0f172a';
+      refreshTextModalPreview();
+      document.getElementById('text-editor-modal').classList.remove('hidden');
+    }
+
+    function closeTextEditorModal() {
+      document.getElementById('text-editor-modal').classList.add('hidden');
+      modalEditState = null;
+    }
+
+    function pickModalTextColor(hex) {
+      document.getElementById('modal-color-input').value = hex;
+      refreshTextModalPreview();
+    }
+
+    function refreshTextModalPreview() {
+      const txt = document.getElementById('modal-text-value').value || 'Preview';
+      const fontName = document.getElementById('modal-font-select').value;
+      const size = parseInt(document.getElementById('modal-size-input').value, 10) || 16;
+      const color = document.getElementById('modal-color-input').value;
+      const fStyle = getFontStyle(fontName);
+
+      const prev = document.getElementById('modal-live-preview');
+      prev.textContent = txt;
+      prev.style.fontFamily = fStyle.cssFamily;
+      prev.style.fontSize = `${Math.min(size, 34)}px`;
+      prev.style.color = color;
+
+      document.getElementById('modal-font-badge').textContent = fontName;
+    }
+
+    function saveTextModalChanges() {
+      if (!modalEditState) return;
+      const newText = document.getElementById('modal-text-value').value;
+      const fontName = document.getElementById('modal-font-select').value;
+      const fontSize = parseInt(document.getElementById('modal-size-input').value, 10) || 16;
+      const color = document.getElementById('modal-color-input').value;
+
+      if (modalEditState.kind === 'replace') {
+        const { pageNum, itemId, normX, normY, normW, normH } = modalEditState;
+        if (!textEditsByPage[pageNum]) textEditsByPage[pageNum] = {};
+        const prev = textEditsByPage[pageNum][itemId] || null;
+        actionHistory.push({ type: 'replace', pageNum, itemId, previousValue: prev });
+
+        textEditsByPage[pageNum][itemId] = { newText, fontName, fontSize, color, normX, normY, normW, normH };
+        closeTextEditorModal();
+        renderCurrentPDFPage();
+        showToast(`Updated in ${fontName}`);
+      } else {
+        const { pageNum, normX, normY } = modalEditState;
+        if (!addedItemsByPage[pageNum]) addedItemsByPage[pageNum] = [];
+        const id = 'txt_' + Date.now();
+        addedItemsByPage[pageNum].push({ id, type: 'text', normX, normY, text: newText, fontName, fontSize, color });
+        actionHistory.push({ type: 'add', pageNum, id });
+        closeTextEditorModal();
+        setSubTool('edit-text');
+        renderAddedItemsLayer();
+        showToast('Text added! Drag to reposition.');
+      }
+    }
+
+    // =========================================================================
+    // 6. DIGITAL SIGNATURE STUDIO (DRAW / TYPE / UPLOAD PNG)
+    // =========================================================================
+    let currentSigTab = 'draw';
+    let currentSigInk = '#0f172a';
+    let sigCanvasEl = null;
+    let sigContext = null;
+    let isSigning = false;
+    let uploadedSigDataUrl = '';
+
+    function openSignatureStudio() {
+      document.getElementById('signature-studio-modal').classList.remove('hidden');
+      setupSigDrawCanvas();
+    }
+
+    function closeSignatureStudio() {
+      document.getElementById('signature-studio-modal').classList.add('hidden');
+    }
+
+    function selectSigTab(tab) {
+      currentSigTab = tab;
+      ['draw', 'type', 'upload'].forEach(t => {
+        const btn = document.getElementById(`sig-btn-${t}`);
+        const view = document.getElementById(`sig-view-${t}`);
+        if (t === tab) {
+          btn.className = 'flex-1 py-2 rounded-lg text-xs font-montserrat font-bold bg-amber-600 text-white shadow-sm transition';
+          view.classList.remove('hidden');
+        } else {
+          btn.className = 'flex-1 py-2 rounded-lg text-xs font-montserrat font-bold text-slate-600 transition';
+          view.classList.add('hidden');
+        }
+      });
+      if (tab === 'draw') setupSigDrawCanvas();
+      if (tab === 'type') updateTypedSig();
+    }
+
+    function setupSigDrawCanvas() {
+      sigCanvasEl = document.getElementById('sig-draw-canvas');
+      const rect = sigCanvasEl.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      sigCanvasEl.width = rect.width * dpr;
+      sigCanvasEl.height = rect.height * dpr;
+      sigContext = sigCanvasEl.getContext('2d');
+      sigContext.scale(dpr, dpr);
+      sigContext.lineCap = 'round';
+      sigContext.lineJoin = 'round';
+      sigContext.lineWidth = 2.8;
+      sigContext.strokeStyle = currentSigInk;
+
+      const coords = (e) => {
+        const r = sigCanvasEl.getBoundingClientRect();
+        const cx = e.touches ? e.touches[0].clientX : e.clientX;
+        const cy = e.touches ? e.touches[0].clientY : e.clientY;
+        return { x: cx - r.left, y: cy - r.top };
+      };
+
+      sigCanvasEl.onmousedown = (e) => { isSigning = true; const p = coords(e); sigContext.beginPath(); sigContext.moveTo(p.x, p.y); };
+      sigCanvasEl.onmousemove = (e) => { if (!isSigning) return; const p = coords(e); sigContext.lineTo(p.x, p.y); sigContext.stroke(); };
+      window.addEventListener('mouseup', () => { isSigning = false; });
+
+      sigCanvasEl.ontouchstart = (e) => { e.preventDefault(); isSigning = true; const p = coords(e); sigContext.beginPath(); sigContext.moveTo(p.x, p.y); };
+      sigCanvasEl.ontouchmove = (e) => { if (!isSigning) return; e.preventDefault(); const p = coords(e); sigContext.lineTo(p.x, p.y); sigContext.stroke(); };
+      sigCanvasEl.ontouchend = () => { isSigning = false; };
+    }
+
+    function changeSigColor(color) {
+      currentSigInk = color;
+      if (sigContext) sigContext.strokeStyle = color;
+    }
+
+    function clearSigCanvas() {
+      if (sigCanvasEl && sigContext) {
+        sigContext.clearRect(0, 0, sigCanvasEl.width, sigCanvasEl.height);
+      }
+    }
+
+    function updateTypedSig() {
+      const txt = document.getElementById('sig-type-input').value || 'Signature';
+      const fontName = document.getElementById('sig-type-font').value;
+      const fStyle = getFontStyle(fontName);
+      const prev = document.getElementById('sig-type-preview');
+      prev.textContent = txt;
+      prev.style.fontFamily = fStyle.cssFamily;
+    }
+
+    function onSigFileSelected(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const img = new Image();
+        img.onload = () => {
+          const c = document.createElement('canvas');
+          c.width = img.width;
+          c.height = img.height;
+          const cx = c.getContext('2d');
+          cx.drawImage(img, 0, 0);
+          const idata = cx.getImageData(0, 0, c.width, c.height);
+          const d = idata.data;
+          for (let i = 0; i < d.length; i += 4) {
+            if (d[i] > 215 && d[i + 1] > 215 && d[i + 2] > 215) d[i + 3] = 0;
+          }
+          cx.putImageData(idata, 0, 0);
+          uploadedSigDataUrl = c.toDataURL('image/png');
+          document.getElementById('sig-upload-preview-img').src = uploadedSigDataUrl;
+          document.getElementById('sig-upload-preview-wrap').classList.remove('hidden');
+        };
+        img.src = ev.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function placeSignatureOnPage() {
+      let dataUrl = '';
+      if (currentSigTab === 'draw') {
+        dataUrl = sigCanvasEl.toDataURL('image/png');
+      } else if (currentSigTab === 'type') {
+        const txt = document.getElementById('sig-type-input').value || 'Signature';
+        const fontName = document.getElementById('sig-type-font').value;
+        const fStyle = getFontStyle(fontName);
+        const c = document.createElement('canvas');
+        c.width = 580;
+        c.height = 170;
+        const cx = c.getContext('2d');
+        cx.font = `74px ${fStyle.cssFamily}`;
+        cx.fillStyle = '#0f172a';
+        cx.textAlign = 'center';
+        cx.textBaseline = 'middle';
+        cx.fillText(txt, 290, 90);
+        dataUrl = c.toDataURL('image/png');
+      } else {
+        if (!uploadedSigDataUrl) {
+          showToast('Please select a signature image first.');
+          return;
+        }
+        dataUrl = uploadedSigDataUrl;
+      }
+
+      if (!addedItemsByPage[activePageNum]) addedItemsByPage[activePageNum] = [];
+      const id = 'sig_' + Date.now();
+      addedItemsByPage[activePageNum].push({
+        id,
+        type: 'signature',
+        normX: 65,
+        normY: 430,
+        normW: 175,
+        normH: 62,
+        dataUrl
+      });
+      actionHistory.push({ type: 'add', pageNum: activePageNum, id });
+      closeSignatureStudio();
+      renderAddedItemsLayer();
+      showToast('Signature placed! Drag to move or resize from corner.');
+    }
+
+    // =========================================================================
+    // 7. DRAGGABLE & RESIZABLE OVERLAY RENDERER
+    // =========================================================================
+    function renderAddedItemsLayer() {
+      const layer = document.getElementById('pdf-custom-layer');
+      layer.innerHTML = '';
+      const items = addedItemsByPage[activePageNum] || [];
+
+      items.forEach(item => {
+        const el = document.createElement('div');
+        el.className = 'placed-item pointer-events-auto';
+        el.style.left = `${item.normX * renderScale}px`;
+        el.style.top = `${item.normY * renderScale}px`;
+
+        if (item.type === 'signature') {
+          el.style.width = `${item.normW * renderScale}px`;
+          el.style.height = `${item.normH * renderScale}px`;
+          el.innerHTML = `<img src="${item.dataUrl}" class="w-full h-full object-contain pointer-events-none" />`;
+        } else {
+          const fStyle = getFontStyle(item.fontName);
+          el.style.fontFamily = fStyle.cssFamily;
+          el.style.fontSize = `${item.fontSize * renderScale}px`;
+          el.style.color = item.color;
+          el.style.whiteSpace = 'nowrap';
+          el.textContent = item.text;
+        }
+
+        const delBtn = document.createElement('button');
+        delBtn.className = 'placed-delete-btn';
+        delBtn.textContent = '✕';
+        delBtn.onclick = (e) => {
+          e.stopPropagation();
+          addedItemsByPage[activePageNum] = addedItemsByPage[activePageNum].filter(i => i.id !== item.id);
+          renderAddedItemsLayer();
+        };
+        el.appendChild(delBtn);
+
+        if (item.type === 'signature') {
+          const dot = document.createElement('div');
+          dot.className = 'placed-resize-dot';
+          dot.onmousedown = (e) => startItemResize(e, item, el);
+          dot.ontouchstart = (e) => startItemResize(e, item, el);
+          el.appendChild(dot);
+        }
+
+        el.onmousedown = (e) => { if (!e.target.classList.contains('placed-resize-dot')) startItemDrag(e, item, el); };
+        el.ontouchstart = (e) => { if (!e.target.classList.contains('placed-resize-dot')) startItemDrag(e, item, el); };
+
+        layer.appendChild(el);
+      });
+    }
+
+    function startItemDrag(e, item, el) {
+      e.preventDefault();
+      const sx = e.touches ? e.touches[0].clientX : e.clientX;
+      const sy = e.touches ? e.touches[0].clientY : e.clientY;
+      const ox = item.normX * renderScale;
+      const oy = item.normY * renderScale;
+
+      const move = (mv) => {
+        const cx = mv.touches ? mv.touches[0].clientX : mv.clientX;
+        const cy = mv.touches ? mv.touches[0].clientY : mv.clientY;
+        const nx = ox + (cx - sx);
+        const ny = oy + (cy - sy);
+        el.style.left = `${nx}px`;
+        el.style.top = `${ny}px`;
+        item.normX = nx / renderScale;
+        item.normY = ny / renderScale;
+      };
+      const up = () => {
+        window.removeEventListener('mousemove', move);
+        window.removeEventListener('mouseup', up);
+        window.removeEventListener('touchmove', move);
+        window.removeEventListener('touchend', up);
+      };
+      window.addEventListener('mousemove', move);
+      window.addEventListener('mouseup', up);
+      window.addEventListener('touchmove', move, { passive: false });
+      window.addEventListener('touchend', up);
+    }
+
+    function startItemResize(e, item, el) {
+      e.preventDefault();
+      e.stopPropagation();
+      const sx = e.touches ? e.touches[0].clientX : e.clientX;
+      const sy = e.touches ? e.touches[0].clientY : e.clientY;
+      const ow = item.normW * renderScale;
+      const oh = item.normH * renderScale;
+
+      const move = (mv) => {
+        const cx = mv.touches ? mv.touches[0].clientX : mv.clientX;
+        const cy = mv.touches ? mv.touches[0].clientY : mv.clientY;
+        const nw = Math.max(45, ow + (cx - sx));
+        const nh = Math.max(22, oh + (cy - sy));
+        el.style.width = `${nw}px`;
+        el.style.height = `${nh}px`;
+        item.normW = nw / renderScale;
+        item.normH = nh / renderScale;
+      };
+      const up = () => {
+        window.removeEventListener('mousemove', move);
+        window.removeEventListener('mouseup', up);
+        window.removeEventListener('touchmove', move);
+        window.removeEventListener('touchend', up);
+      };
+      window.addEventListener('mousemove', move);
+      window.addEventListener('mouseup', up);
+      window.addEventListener('touchmove', move, { passive: false });
+      window.addEventListener('touchend', up);
+    }
+
+    // =========================================================================
+    // 8. FLATTENED HIGH-RES PDF DOWNLOAD & SAVE TO PHONE
+    // =========================================================================
+    function renderTextToHighResPNG(text, fontName, fontSize, color) {
+      const fStyle = getFontStyle(fontName);
+      const mult = 3;
+      const c = document.createElement('canvas');
+      const cx = c.getContext('2d');
+      cx.font = `${fontSize * mult}px ${fStyle.cssFamily}`;
+      const metrics = cx.measureText(text);
+
+      c.width = Math.max(20, Math.ceil(metrics.width + 20 * mult));
+      c.height = Math.max(20, Math.ceil(fontSize * 1.45 * mult));
+
+      cx.font = `${fontSize * mult}px ${fStyle.cssFamily}`;
+      cx.fillStyle = color;
+      cx.textBaseline = 'middle';
+      cx.fillText(text, 5 * mult, c.height / 2);
+
+      return {
+        dataUrl: c.toDataURL('image/png'),
+        w: c.width / mult,
+        h: c.height / mult
+      };
+    }
+
+    async function downloadModifiedPDF() {
+      if (!activePDFRecord) return;
+      showToast('Preparing edited PDF for download...');
+
+      try {
+        const { PDFDocument, rgb } = PDFLib;
+        const doc = await PDFDocument.load(activePDFRecord.bytes);
+        const pages = doc.getPages();
+
+        for (let idx = 0; idx < pages.length; idx++) {
+          const pNum = idx + 1;
+          const page = pages[idx];
+          const { height: pageHeight } = page.getSize();
+
+          // 1. Cover & Replace Edited Existing Text
+          const pageTextEdits = textEditsByPage[pNum] || {};
+          for (const key of Object.keys(pageTextEdits)) {
+            const ed = pageTextEdits[key];
+            page.drawRectangle({
+              x: ed.normX - 2,
+              y: pageHeight - ed.normY - ed.normH,
+              width: Math.max(ed.normW + 6, ed.newText.length * ed.fontSize * 0.55),
+              height: ed.normH + 4,
+              color: rgb(1, 1, 1)
+            });
+
+            const pngData = renderTextToHighResPNG(ed.newText, ed.fontName, ed.fontSize, ed.color);
+            const embedded = await doc.embedPng(pngData.dataUrl);
+            page.drawImage(embedded, {
+              x: ed.normX - 3,
+              y: pageHeight - ed.normY - pngData.h + 2,
+              width: pngData.w,
+              height: pngData.h
+            });
+          }
+
+          // 2. Embed Added Custom Text & Digital Signatures
+          const addedList = addedItemsByPage[pNum] || [];
+          for (const item of addedList) {
+            if (item.type === 'signature') {
+              const sigPng = await doc.embedPng(item.dataUrl);
+              page.drawImage(sigPng, {
+                x: item.normX,
+                y: pageHeight - item.normY - item.normH,
+                width: item.normW,
+                height: item.normH
+              });
+            } else {
+              const pngData = renderTextToHighResPNG(item.text, item.fontName, item.fontSize, item.color);
+              const txtPng = await doc.embedPng(pngData.dataUrl);
+              page.drawImage(txtPng, {
+                x: item.normX,
+                y: pageHeight - item.normY - pngData.h,
+                width: pngData.w,
+                height: pngData.h
+              });
+            }
+          }
+        }
+
+        const outBytes = await doc.save();
+        const cleanName = activePDFRecord.name.replace(/\.pdf$/i, '') + '_Edited.pdf';
+
+        // Also update/save edited copy in Home Library
+        await ingestPDFBytesToLibrary(cleanName, outBytes);
+
+        // Trigger instant file download on device
+        const blob = new Blob([outBytes], { type: 'application/pdf' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = cleanName;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 5000);
+
+        showToast('Downloaded & saved to your PDF list!');
+      } catch (err) {
+        console.error(err);
+        showToast('Error generating PDF download.');
+      }
+    }
+
+    // =========================================================================
+    // 9. TOAST HELPER
+    // =========================================================================
+    function showToast(msg) {
+      const box = document.getElementById('toast-box');
+      const el = document.createElement('div');
+      el.className = 'bg-slate-900 text-white border border-amber-400/70 px-4 py-2.5 rounded-full shadow-xl text-xs font-montserrat font-semibold text-center view-enter';
+      el.textContent = msg;
+      box.appendChild(el);
+      setTimeout(() => {
+        el.style.opacity = '0';
+        el.style.transition = 'opacity 0.25s ease';
+        setTimeout(() => el.remove(), 260);
+      }, 2600);
+    }
+  </script>
+</body>
+</html>
