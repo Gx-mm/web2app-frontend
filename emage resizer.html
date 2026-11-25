@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emage Resizer by Ravi — Ultra-Fast Image Optimizer & Resizer</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- JSZip for Batch Download -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <!-- Google Fonts: Plus Jakarta Sans & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Plus Jakarta Sans', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            rose: '#F43F5E',
+                            indigo: '#4F46E5',
+                            soft: '#FFF1F2',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #FAFAFC;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(244, 63, 94, 0.08) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, rgba(79, 70, 229, 0.08) 0px, transparent 50%),
+                radial-gradient(at 50% 100%, rgba(244, 63, 94, 0.05) 0px, transparent 50%);
+            background-attachment: fixed;
+            color: #0F172A;
+            overflow-x: hidden;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.78);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            border: 1px solid rgba(255, 255, 255, 0.9);
+            box-shadow: 0 10px 35px -5px rgba(15, 23, 42, 0.05), 0 4px 12px -2px rgba(79, 70, 229, 0.03);
+        }
+
+        /* Checkerboard background for transparent PNG/WebP previews */
+        .transparency-grid {
+            background-color: #f8fafc;
+            background-image: 
+                linear-gradient(45deg, #e2e8f0 25%, transparent 25%), 
+                linear-gradient(-45deg, #e2e8f0 25%, transparent 25%), 
+                linear-gradient(45deg, transparent 75%, #e2e8f0 75%), 
+                linear-gradient(-45deg, transparent 75%, #e2e8f0 75%);
+            background-size: 16px 16px;
+            background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
+        }
+
+        /* Custom Range Slider */
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            background: transparent;
+            cursor: pointer;
+        }
+        input[type="range"]::-webkit-slider-runnable-track {
+            background: #E2E8F0;
+            height: 0.45rem;
+            border-radius: 999px;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            margin-top: -5px;
+            background: linear-gradient(135deg, #F43F5E, #4F46E5);
+            height: 1.15rem;
+            width: 1.15rem;
+            border-radius: 50%;
+            box-shadow: 0 2px 8px rgba(79, 70, 229, 0.4);
+            border: 2px solid white;
+            transition: transform 0.15s ease;
+        }
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.15);
+        }
+
+        /* Split comparison slider styling */
+        .comparison-container {
+            position: relative;
+            user-select: none;
+            touch-action: none;
+            overflow: hidden;
+        }
+        .comparison-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            overflow: hidden;
+        }
+        .comparison-handle {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: white;
+            box-shadow: 0 0 12px rgba(0, 0, 0, 0.35);
+            cursor: ew-resize;
+            z-index: 20;
+        }
+        .comparison-knob {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #F43F5E, #4F46E5);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 15px rgba(79, 70, 229, 0.45);
+            border: 2.5px solid white;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased selection:bg-rose-500 selection:text-white">
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- Top Navigation Header -->
+    <header class="sticky top-0 z-40 glass-card border-b border-slate-200/70">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <!-- Brand Logo Image -->
+                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%23F43F5E'/%3E%3Cstop offset='100%25' stop-color='%234F46E5'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='16' fill='url(%23g)'/%3E%3Crect x='14' y='16' width='36' height='32' rx='6' fill='none' stroke='%23ffffff' stroke-width='3.5'/%3E%3Ccircle cx='24' cy='26' r='3.5' fill='%23ffffff'/%3E%3Cpath d='M16 44 L28 32 L36 39 L42 33 L48 44 Z' fill='%23ffffff' opacity='0.9'/%3E%3C/svg%3E" alt="Emage Resizer Logo" class="w-10 h-10 rounded-xl shadow-lg shadow-indigo-500/20 object-cover">
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="font-display font-extrabold text-lg tracking-tight text-slate-900">Emage Resizer</span>
+                        <a href="https://ravikishan.infy.click/" target="_blank" rel="noopener noreferrer" class="text-[11px] font-bold tracking-wide px-2.5 py-0.5 rounded-full bg-gradient-to-r from-rose-500/10 to-indigo-500/10 text-indigo-600 hover:text-rose-600 hover:border-rose-300 border border-indigo-200/60 transition-colors">by Ravi</a>
+                    </div>
+                    <p class="text-xs text-slate-500 hidden sm:block">Zero-Upload Retina Image Optimizer for Everyone (300KB–600KB Sweet Spot)</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <div class="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200/70 text-emerald-700 text-xs font-medium">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    100% Local Browser Processing
+                </div>
+                <button onclick="document.getElementById('file-input').click()" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold transition shadow-sm active:scale-95">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 5v14M5 12h14'/%3E%3C/svg%3E" alt="Add" class="w-4 h-4">
+                    <span>Add Images</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+        <!-- Hero & Upload Section -->
+        <section class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+            
+            <!-- Left: Drag & Drop Upload Zone -->
+            <div class="lg:col-span-7 flex flex-col">
+                <div id="drop-zone" class="flex-1 glass-card rounded-3xl p-6 sm:p-8 border-2 border-dashed border-indigo-200 hover:border-rose-400 transition-all duration-300 flex flex-col items-center justify-center text-center cursor-pointer group relative overflow-hidden">
+                    <div class="absolute -top-24 -right-24 w-48 h-48 bg-rose-400/10 rounded-full blur-2xl group-hover:bg-rose-400/20 transition"></div>
+                    <div class="absolute -bottom-24 -left-24 w-48 h-48 bg-indigo-400/10 rounded-full blur-2xl group-hover:bg-indigo-400/20 transition"></div>
+
+                    <input type="file" id="file-input" class="hidden" multiple accept="image/png, image/jpeg, image/webp">
+                    
+                    <!-- Upload Illustration Image -->
+                    <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-rose-50 to-indigo-50 border border-indigo-100 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300 shadow-sm p-3">
+                        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='u' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%23F43F5E'/%3E%3Cstop offset='100%25' stop-color='%234F46E5'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M20 46h26a11 11 0 0 0 2-21.8A16 16 0 0 0 17.5 20 12 12 0 0 0 20 46z' fill='url(%23u)' opacity='0.18'/%3E%3Cpath d='M32 42V22M24 30l8-8 8 8' fill='none' stroke='url(%23u)' stroke-width='4.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" alt="Upload Images" class="w-full h-full object-contain">
+                    </div>
+                    
+                    <h1 class="font-display font-extrabold text-xl sm:text-2xl text-slate-900 mb-2">
+                        Drop Photos, Icons & Screenshots Here
+                    </h1>
+                    <p class="text-sm text-slate-500 max-w-md mb-5 leading-relaxed">
+                        Shrink heavy <span class="font-semibold text-slate-700">3–4 MB</span> images down to <span class="font-semibold text-indigo-600">300–600 KB</span> with crisp retina clarity for websites, social media, apps, and daily sharing.
+                    </p>
+
+                    <div class="flex flex-wrap items-center justify-center gap-2 text-xs text-slate-500">
+                        <span class="px-2.5 py-1 rounded-lg bg-white/80 border border-slate-200/80 font-medium">PNG</span>
+                        <span class="px-2.5 py-1 rounded-lg bg-white/80 border border-slate-200/80 font-medium">JPG / JPEG</span>
+                        <span class="px-2.5 py-1 rounded-lg bg-white/80 border border-slate-200/80 font-medium">WebP</span>
+                        <span class="px-2.5 py-1 rounded-lg bg-rose-50 border border-rose-200/70 text-rose-600 font-semibold">Batch Supported</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Smart Presets & Engine Controls -->
+            <div class="lg:col-span-5 glass-card rounded-3xl p-6 flex flex-col justify-between space-y-5">
+                <div>
+                    <div class="flex items-center justify-between mb-3">
+                        <h2 class="font-display font-bold text-base text-slate-900 flex items-center gap-2">
+                            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23F43F5E' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cline x1='4' y1='6' x2='20' y2='6'/%3E%3Ccircle cx='9' cy='6' r='2.5' fill='%23ffffff'/%3E%3Cline x1='4' y1='12' x2='20' y2='12'/%3E%3Ccircle cx='15' cy='12' r='2.5' fill='%23ffffff'/%3E%3Cline x1='4' y1='18' x2='20' y2='18'/%3E%3Ccircle cx='10' cy='18' r='2.5' fill='%23ffffff'/%3E%3C/svg%3E" alt="Settings" class="w-4 h-4">
+                            Smart Optimization Preset
+                        </h2>
+                        <span id="active-preset-badge" class="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-200/70">Photo & Screen Mode</span>
+                    </div>
+
+                    <!-- Preset Selector Buttons -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 mb-5">
+                        <button type="button" data-preset="screenshot" class="preset-btn active-preset text-left p-3 rounded-2xl border-2 border-indigo-600 bg-indigo-50/60 transition-all">
+                            <div class="flex items-center justify-between mb-1">
+                                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234F46E5' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='3' width='18' height='18' rx='3'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='M21 15l-5-5L5 21'/%3E%3C/svg%3E" alt="Photo" class="w-4 h-4">
+                                <span class="preset-dot w-2 h-2 rounded-full bg-indigo-600"></span>
+                            </div>
+                            <div class="font-bold text-xs text-slate-900">Photo / Screen</div>
+                            <div class="text-[11px] text-slate-500 mt-0.5">1440px • 450 KB</div>
+                        </button>
+
+                        <button type="button" data-preset="icon" class="preset-btn text-left p-3 rounded-2xl border border-slate-200/90 bg-white/60 hover:border-rose-300 transition-all">
+                            <div class="flex items-center justify-between mb-1">
+                                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23F43F5E' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='3' width='7' height='7' rx='1.5'/%3E%3Crect x='14' y='3' width='7' height='7' rx='1.5'/%3E%3Crect x='14' y='14' width='7' height='7' rx='1.5'/%3E%3Crect x='3' y='14' width='7' height='7' rx='1.5'/%3E%3C/svg%3E" alt="Icon" class="w-4 h-4">
+                                <span class="preset-dot w-2 h-2 rounded-full bg-transparent"></span>
+                            </div>
+                            <div class="font-bold text-xs text-slate-900">Icon / Avatar</div>
+                            <div class="text-[11px] text-slate-500 mt-0.5">512×512 • Crisp</div>
+                        </button>
+
+                        <button type="button" data-preset="custom" class="preset-btn text-left p-3 rounded-2xl border border-slate-200/90 bg-white/60 hover:border-indigo-300 transition-all">
+                            <div class="flex items-center justify-between mb-1">
+                                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3Cpath d='M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.604.852.997 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z'/%3E%3C/svg%3E" alt="Custom" class="w-4 h-4">
+                                <span class="preset-dot w-2 h-2 rounded-full bg-transparent"></span>
+                            </div>
+                            <div class="font-bold text-xs text-slate-900">Custom Target</div>
+                            <div class="text-[11px] text-slate-500 mt-0.5">Manual Size & Dim</div>
+                        </button>
+                    </div>
+
+                    <!-- Dynamic Configuration Controls -->
+                    <div class="space-y-4 bg-white/60 rounded-2xl p-4 border border-slate-200/70">
+                        <!-- Target File Size Slider -->
+                        <div>
+                            <div class="flex items-center justify-between text-xs mb-1.5">
+                                <label for="target-kb-slider" class="font-semibold text-slate-700">Target Max File Size</label>
+                                <span class="font-mono font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-100">
+                                    <span id="target-kb-display">450</span> KB
+                                </span>
+                            </div>
+                            <input type="range" id="target-kb-slider" min="80" max="900" step="10" value="450" class="w-full">
+                            <div class="flex justify-between text-[10px] text-slate-400 mt-1 font-medium">
+                                <span>80 KB (Icon)</span>
+                                <span class="text-emerald-600 font-semibold">300–600 KB Sweet Spot</span>
+                                <span>900 KB</span>
+                            </div>
+                        </div>
+
+                        <!-- Format & Dimension Row -->
+                        <div class="grid grid-cols-2 gap-3 pt-1">
+                            <div>
+                                <label class="block text-[11px] font-semibold text-slate-600 mb-1">Output Format</label>
+                                <select id="output-format" class="w-full text-xs font-semibold text-slate-800 bg-white border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500/30">
+                                    <option value="image/webp" selected>WebP (Ultra-Fast)</option>
+                                    <option value="image/jpeg">JPEG (Universal)</option>
+                                    <option value="original">Original Format</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-semibold text-slate-600 mb-1">Max Resolution</label>
+                                <select id="max-dimension" class="w-full text-xs font-semibold text-slate-800 bg-white border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500/30">
+                                    <option value="1440" selected>1440px (Retina HD)</option>
+                                    <option value="1080">1080px (Social / FHD)</option>
+                                    <option value="512">512×512 (Square Icon)</option>
+                                    <option value="2048">2048px (2K Ultra)</option>
+                                    <option value="0">Keep Original Size</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Custom Exact Width/Height Inputs -->
+                        <div id="custom-dims-panel" class="hidden grid-cols-2 gap-3 pt-2 border-t border-slate-200/70">
+                            <div>
+                                <label class="block text-[11px] font-semibold text-slate-600 mb-1">Custom Width (px)</label>
+                                <input type="number" id="custom-width" placeholder="e.g. 1280" class="w-full text-xs font-medium bg-white border border-slate-200 rounded-xl px-3 py-1.5 focus:outline-none focus:border-indigo-500">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-semibold text-slate-600 mb-1">Custom Height (px)</label>
+                                <input type="number" id="custom-height" placeholder="Auto" class="w-full text-xs font-medium bg-white border border-slate-200 rounded-xl px-3 py-1.5 focus:outline-none focus:border-indigo-500">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Re-optimize Button -->
+                <button id="reprocess-all-btn" class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-rose-500 to-indigo-600 hover:from-rose-600 hover:to-indigo-700 text-white font-semibold text-sm shadow-md shadow-indigo-500/20 transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ffffff'%3E%3Cpath d='M13 2L3 14h9l-1 8 10-12h-9l1-8z'/%3E%3C/svg%3E" alt="Optimize" class="w-4 h-4">
+                    <span>Apply Settings & Optimize Queue</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- Summary Stats & Batch Action Bar -->
+        <section id="batch-bar" class="hidden glass-card rounded-2xl p-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="flex flex-wrap items-center gap-4 sm:gap-8">
+                <div>
+                    <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Total Images</div>
+                    <div class="font-display font-extrabold text-lg text-slate-900"><span id="stat-count">0</span> Files</div>
+                </div>
+                <div class="h-8 w-px bg-slate-200 hidden sm:block"></div>
+                <div>
+                    <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Original Weight</div>
+                    <div class="font-display font-bold text-lg text-slate-600" id="stat-original">0 MB</div>
+                </div>
+                <div class="h-8 w-px bg-slate-200 hidden sm:block"></div>
+                <div>
+                    <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Optimized Ready</div>
+                    <div class="font-display font-extrabold text-lg text-emerald-600 flex items-center gap-2">
+                        <span id="stat-optimized">0 KB</span>
+                        <span id="stat-saved-pill" class="text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-bold">-0%</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
+                <button id="clear-all-btn" class="px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 text-slate-600 text-xs font-semibold transition flex items-center gap-1.5">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23E11D48' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='3 6 5 6 21 6'/%3E%3Cpath d='M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2'/%3E%3C/svg%3E" alt="Clear" class="w-4 h-4">
+                    <span>Clear</span>
+                </button>
+                <button id="download-zip-btn" class="flex-1 sm:flex-initial px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-indigo-600 text-white text-xs sm:text-sm font-semibold transition shadow-lg shadow-slate-900/10 flex items-center justify-center gap-2">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4'/%3E%3Cpolyline points='7 10 12 15 17 10'/%3E%3Cline x1='12' y1='15' x2='12' y2='3'/%3E%3C/svg%3E" alt="Download ZIP" class="w-4 h-4">
+                    <span>Download All as ZIP</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- Interactive Before / After Inspector -->
+        <section id="inspector-section" class="hidden glass-card rounded-3xl p-5 sm:p-7 border border-indigo-200/80 shadow-xl">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 pb-4 border-b border-slate-200/70">
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="px-2.5 py-0.5 rounded-md bg-rose-500 text-white text-[11px] font-bold uppercase tracking-wider">Retina Quality Inspector</span>
+                        <h3 id="inspector-filename" class="font-display font-bold text-base sm:text-lg text-slate-900 truncate max-w-md">screenshot_01.png</h3>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-1">Drag the slider left and right to verify text sharpness, gradients, and icon edges.</p>
+                </div>
+
+                <div class="flex items-center gap-3 self-end sm:self-center">
+                    <div class="text-right">
+                        <div class="text-[11px] text-slate-400 font-medium">Size Reduction</div>
+                        <div id="inspector-metrics" class="text-xs font-bold text-emerald-600">3.8 MB → 420 KB (-89%)</div>
+                    </div>
+                    <button id="close-inspector-btn" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 transition" title="Close Inspector">
+                        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cline x1='18' y1='6' x2='6' y2='18'/%3E%3Cline x1='6' y1='6' x2='18' y2='18'/%3E%3C/svg%3E" alt="Close" class="w-4 h-4">
+                    </button>
+                </div>
+            </div>
+
+            <!-- Split Slider Canvas -->
+            <div class="relative w-full h-[340px] sm:h-[460px] rounded-2xl transparency-grid border border-slate-200/90 flex items-center justify-center overflow-hidden">
+                <div id="comparison-box" class="comparison-container w-full h-full flex items-center justify-center">
+                    <!-- Optimized Image (Base / Right side) -->
+                    <img id="compare-optimized-img" src="" alt="Optimized Preview" class="max-w-full max-h-full object-contain pointer-events-none select-none">
+                    
+                    <!-- Original Image (Overlay / Left side) -->
+                    <div id="compare-overlay" class="comparison-overlay w-1/2 h-full flex items-center justify-center">
+                        <img id="compare-original-img" src="" alt="Original Preview" class="max-w-none h-full object-contain pointer-events-none select-none">
+                    </div>
+
+                    <!-- Draggable Handle -->
+                    <div id="compare-handle" class="comparison-handle" style="left: 50%;">
+                        <div class="comparison-knob">
+                            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='18 8 22 12 18 16'/%3E%3Cpolyline points='6 8 2 12 6 16'/%3E%3Cline x1='2' y1='12' x2='22' y2='12'/%3E%3C/svg%3E" alt="Slide" class="w-4 h-4">
+                        </div>
+                    </div>
+
+                    <!-- Floating Labels -->
+                    <span class="absolute top-3 left-3 z-10 px-3 py-1 rounded-full bg-slate-900/75 backdrop-blur-md text-white text-xs font-semibold">
+                        Original (<span id="badge-orig-size">0 MB</span>)
+                    </span>
+                    <span class="absolute top-3 right-3 z-10 px-3 py-1 rounded-full bg-emerald-600/90 backdrop-blur-md text-white text-xs font-semibold">
+                        Optimized (<span id="badge-opt-size">0 KB</span>)
+                    </span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Processed Assets Grid -->
+        <section id="assets-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <!-- Asset cards dynamically injected here -->
+        </section>
+
+        <!-- Empty State Helper -->
+        <section id="empty-state-tips" class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+            <div class="glass-card rounded-2xl p-5 flex items-start gap-3.5">
+                <div class="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center shrink-0 p-2">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23F43F5E' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 14l4-4'/%3E%3Cpath d='M3.34 19a10 10 0 1 1 17.32 0'/%3E%3C/svg%3E" alt="Speed" class="w-6 h-6">
+                </div>
+                <div>
+                    <h3 class="font-display font-bold text-sm text-slate-900">Binary-Search Target Engine</h3>
+                    <p class="text-xs text-slate-500 mt-1 leading-relaxed">Automatically probes compression curves in milliseconds to hit 300–600 KB without visible banding or blur.</p>
+                </div>
+            </div>
+            <div class="glass-card rounded-2xl p-5 flex items-start gap-3.5">
+                <div class="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center shrink-0 p-2">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234F46E5' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2'/%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3C/svg%3E" alt="Retina" class="w-6 h-6">
+                </div>
+                <div>
+                    <h3 class="font-display font-bold text-sm text-slate-900">Smart Retina Downscaling</h3>
+                    <p class="text-xs text-slate-500 mt-1 leading-relaxed">Caps oversized 4K phone captures to 1440px or 512×512 app icons using high-grade bicubic smoothing.</p>
+                </div>
+            </div>
+            <div class="glass-card rounded-2xl p-5 flex items-start gap-3.5">
+                <div class="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0 p-2">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23059669' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z'/%3E%3Cpolyline points='9 12 11 14 15 10'/%3E%3C/svg%3E" alt="Privacy" class="w-6 h-6">
+                </div>
+                <div>
+                    <h3 class="font-display font-bold text-sm text-slate-900">100% Private & Instant</h3>
+                    <p class="text-xs text-slate-500 mt-1 leading-relaxed">Built for creators, bloggers, stores, and everyday users. Your images never leave your browser.</p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-12 py-6 border-t border-slate-200/70 text-center text-xs text-slate-500">
+        All rights reserved by <a href="https://ravikishan.infy.click/" target="_blank" rel="noopener noreferrer" class="font-semibold text-indigo-600 hover:text-rose-500 underline decoration-indigo-300 hover:decoration-rose-400 underline-offset-4 transition-colors">Ravi</a>
+    </footer>
+
+    <script>
+        // Application State
+        const state = {
+            items: [],
+            preset: 'screenshot',
+            targetKB: 450,
+            maxDimension: 1440,
+            outputFormat: 'image/webp',
+            customWidth: null,
+            customHeight: null,
+            activeInspectId: null
+        };
+
+        // DOM Elements
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const presetBtns = document.querySelectorAll('.preset-btn');
+        const badge = document.getElementById('active-preset-badge');
+        const targetKbSlider = document.getElementById('target-kb-slider');
+        const targetKbDisplay = document.getElementById('target-kb-display');
+        const outputFormatSelect = document.getElementById('output-format');
+        const maxDimensionSelect = document.getElementById('max-dimension');
+        const customDimsPanel = document.getElementById('custom-dims-panel');
+        const customWidthInput = document.getElementById('custom-width');
+        const customHeightInput = document.getElementById('custom-height');
+        const reprocessAllBtn = document.getElementById('reprocess-all-btn');
+        const batchBar = document.getElementById('batch-bar');
+        const emptyStateTips = document.getElementById('empty-state-tips');
+        const assetsGrid = document.getElementById('assets-grid');
+        const clearAllBtn = document.getElementById('clear-all-btn');
+        const downloadZipBtn = document.getElementById('download-zip-btn');
+
+        // Inspector DOM
+        const inspectorSection = document.getElementById('inspector-section');
+        const inspectorFilename = document.getElementById('inspector-filename');
+        const inspectorMetrics = document.getElementById('inspector-metrics');
+        const closeInspectorBtn = document.getElementById('close-inspector-btn');
+        const comparisonBox = document.getElementById('comparison-box');
+        const compareOptimizedImg = document.getElementById('compare-optimized-img');
+        const compareOriginalImg = document.getElementById('compare-original-img');
+        const compareOverlay = document.getElementById('compare-overlay');
+        const compareHandle = document.getElementById('compare-handle');
+        const badgeOrigSize = document.getElementById('badge-orig-size');
+        const badgeOptSize = document.getElementById('badge-opt-size');
+
+        // Helper: Format Bytes
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(i === 1 ? 0 : 2)) + ' ' + sizes[i];
+        }
+
+        // Helper: Show Toast
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const bg = type === 'error' ? 'bg-rose-600' : 'bg-slate-900';
+            toast.className = `${bg} text-white text-xs font-semibold px-4 py-3 rounded-xl shadow-xl flex items-center gap-2 transition-all duration-300 transform translate-y-2 opacity-0`;
+            toast.innerHTML = `<span class="w-2 h-2 rounded-full ${type === 'error' ? 'bg-white' : 'bg-emerald-400'}"></span><span>${message}</span>`;
+            container.appendChild(toast);
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            });
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // Preset Switching
+        presetBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const preset = btn.dataset.preset;
+                state.preset = preset;
+
+                presetBtns.forEach(b => {
+                    b.classList.remove('border-2', 'border-indigo-600', 'bg-indigo-50/60');
+                    b.classList.add('border', 'border-slate-200/90', 'bg-white/60');
+                    const dot = b.querySelector('.preset-dot');
+                    if (dot) {
+                        dot.classList.remove('bg-indigo-600');
+                        dot.classList.add('bg-transparent');
+                    }
+                });
+
+                btn.classList.remove('border', 'border-slate-200/90', 'bg-white/60');
+                btn.classList.add('border-2', 'border-indigo-600', 'bg-indigo-50/60');
+                const activeDot = btn.querySelector('.preset-dot');
+                if (activeDot) {
+                    activeDot.classList.remove('bg-transparent');
+                    activeDot.classList.add('bg-indigo-600');
+                }
+
+                if (preset === 'screenshot') {
+                    badge.textContent = 'Photo & Screen Mode';
+                    state.targetKB = 450;
+                    state.maxDimension = 1440;
+                    state.outputFormat = 'image/webp';
+                    customDimsPanel.classList.add('hidden');
+                    customDimsPanel.classList.remove('grid');
+                } else if (preset === 'icon') {
+                    badge.textContent = 'Icon & Avatar 512×512';
+                    state.targetKB = 180;
+                    state.maxDimension = 512;
+                    state.outputFormat = 'image/webp';
+                    customDimsPanel.classList.add('hidden');
+                    customDimsPanel.classList.remove('grid');
+                } else if (preset === 'custom') {
+                    badge.textContent = 'Custom Mode';
+                    customDimsPanel.classList.remove('hidden');
+                    customDimsPanel.classList.add('grid');
+                }
+
+                targetKbSlider.value = state.targetKB;
+                targetKbDisplay.textContent = state.targetKB;
+                maxDimensionSelect.value = state.maxDimension;
+                outputFormatSelect.value = state.outputFormat;
+            });
+        });
+
+        // Control Listeners
+        targetKbSlider.addEventListener('input', (e) => {
+            state.targetKB = parseInt(e.target.value, 10);
+            targetKbDisplay.textContent = state.targetKB;
+        });
+
+        outputFormatSelect.addEventListener('change', (e) => {
+            state.outputFormat = e.target.value;
+        });
+
+        maxDimensionSelect.addEventListener('change', (e) => {
+            state.maxDimension = parseInt(e.target.value, 10);
+        });
+
+        customWidthInput.addEventListener('input', (e) => {
+            state.customWidth = e.target.value ? parseInt(e.target.value, 10) : null;
+        });
+
+        customHeightInput.addEventListener('input', (e) => {
+            state.customHeight = e.target.value ? parseInt(e.target.value, 10) : null;
+        });
+
+        // Drag & Drop Events
+        dropZone.addEventListener('click', () => fileInput.click());
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('border-rose-500', 'bg-rose-50/30');
+        });
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('border-rose-500', 'bg-rose-50/30');
+        });
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('border-rose-500', 'bg-rose-50/30');
+            if (e.dataTransfer.files.length > 0) {
+                handleFiles(e.dataTransfer.files);
+            }
+        });
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFiles(e.target.files);
+                fileInput.value = '';
+            }
+        });
+
+        // Handle Uploaded Files
+        async function handleFiles(fileList) {
+            const validFiles = Array.from(fileList).filter(f => f.type.startsWith('image/'));
+            if (validFiles.length === 0) {
+                showToast('Please select valid PNG, JPG, or WebP images.', 'error');
+                return;
+            }
+
+            const newItems = [];
+            for (const file of validFiles) {
+                const id = 'img_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+                const originalUrl = URL.createObjectURL(file);
+                const item = {
+                    id,
+                    file,
+                    name: file.name,
+                    originalSize: file.size,
+                    originalType: file.type,
+                    originalUrl,
+                    origWidth: 0,
+                    origHeight: 0,
+                    newWidth: 0,
+                    newHeight: 0,
+                    optimizedBlob: null,
+                    optimizedUrl: null,
+                    optimizedSize: 0,
+                    format: 'WEBP'
+                };
+                state.items.push(item);
+                newItems.push(item);
+            }
+
+            batchBar.classList.remove('hidden');
+            emptyStateTips.classList.add('hidden');
+            renderCards();
+
+            for (const item of newItems) {
+                await compressImageItem(item);
+                renderCards();
+                updateSummaryStats();
+            }
+
+            if (newItems.length > 0 && !state.activeInspectId) {
+                openInspector(newItems[0].id);
+            }
+
+            showToast(`Optimized ${newItems.length} image${newItems.length > 1 ? 's' : ''}!`);
+        }
+
+        // Core Binary-Search Compression Engine
+        function compressImageItem(item) {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.onload = async () => {
+                    item.origWidth = img.naturalWidth;
+                    item.origHeight = img.naturalHeight;
+
+                    let targetW = item.origWidth;
+                    let targetH = item.origHeight;
+
+                    if (state.preset === 'custom' && (state.customWidth || state.customHeight)) {
+                        if (state.customWidth && state.customHeight) {
+                            targetW = state.customWidth;
+                            targetH = state.customHeight;
+                        } else if (state.customWidth) {
+                            targetW = state.customWidth;
+                            targetH = Math.round((item.origHeight / item.origWidth) * targetW);
+                        } else if (state.customHeight) {
+                            targetH = state.customHeight;
+                            targetW = Math.round((item.origWidth / item.origHeight) * targetH);
+                        }
+                    } else if (state.maxDimension > 0) {
+                        if (state.preset === 'icon' && state.maxDimension === 512) {
+                            const scale = Math.min(512 / item.origWidth, 512 / item.origHeight, 1);
+                            targetW = Math.round(item.origWidth * scale);
+                            targetH = Math.round(item.origHeight * scale);
+                        } else {
+                            const maxSide = Math.max(item.origWidth, item.origHeight);
+                            if (maxSide > state.maxDimension) {
+                                const ratio = state.maxDimension / maxSide;
+                                targetW = Math.round(item.origWidth * ratio);
+                                targetH = Math.round(item.origHeight * ratio);
+                            }
+                        }
+                    }
+
+                    item.newWidth = targetW;
+                    item.newHeight = targetH;
+
+                    const canvas = document.createElement('canvas');
+                    canvas.width = targetW;
+                    canvas.height = targetH;
+                    const ctx = canvas.getContext('2d');
+                    ctx.imageSmoothingEnabled = true;
+                    ctx.imageSmoothingQuality = 'high';
+
+                    let mimeType = state.outputFormat === 'original' ? item.originalType : state.outputFormat;
+                    if (mimeType === 'image/jpeg') {
+                        ctx.fillStyle = '#FFFFFF';
+                        ctx.fillRect(0, 0, targetW, targetH);
+                    }
+                    ctx.drawImage(img, 0, 0, targetW, targetH);
+
+                    const targetBytes = state.targetKB * 1024;
+                    const toBlob = (q) => new Promise(res => canvas.toBlob(res, mimeType, q));
+
+                    let bestBlob = await toBlob(0.92);
+
+                    if (mimeType !== 'image/png' && bestBlob.size > targetBytes) {
+                        let minQ = 0.15;
+                        let maxQ = 0.92;
+                        for (let i = 0; i < 6; i++) {
+                            const midQ = (minQ + maxQ) / 2;
+                            const candidate = await toBlob(midQ);
+                            if (candidate.size <= targetBytes) {
+                                bestBlob = candidate;
+                                minQ = midQ;
+                            } else {
+                                maxQ = midQ;
+                            }
+                        }
+                        if (bestBlob.size > targetBytes) {
+                            bestBlob = await toBlob(minQ);
+                        }
+                    }
+
+                    if (item.optimizedUrl) URL.revokeObjectURL(item.optimizedUrl);
+                    item.optimizedBlob = bestBlob;
+                    item.optimizedUrl = URL.createObjectURL(bestBlob);
+                    item.optimizedSize = bestBlob.size;
+                    item.format = mimeType.split('/')[1].toUpperCase();
+                    resolve();
+                };
+                img.src = item.originalUrl;
+            });
+        }
+
+        // Reprocess All Existing Items
+        async function reprocessAll() {
+            for (const item of state.items) {
+                await compressImageItem(item);
+                renderCards();
+                updateSummaryStats();
+            }
+            if (state.activeInspectId) {
+                openInspector(state.activeInspectId);
+            }
+            showToast('All images updated with new settings!');
+        }
+
+        reprocessAllBtn.addEventListener('click', () => {
+            if (state.items.length === 0) {
+                showToast('Upload images first to optimize!', 'error');
+                return;
+            }
+            reprocessAll();
+        });
+
+        // Generate Clean Output Filename
+        function getOutputFilename(item) {
+            const baseName = item.name.replace(/\.[^/.]+$/, '');
+            const ext = item.format.toLowerCase() === 'jpeg' ? 'jpg' : item.format.toLowerCase();
+            return `${baseName}_resized.${ext}`;
+        }
+
+        // Render Asset Cards Grid
+        function renderCards() {
+            assetsGrid.innerHTML = '';
+            state.items.forEach(item => {
+                const isReady = !!item.optimizedBlob;
+                const savedPercent = isReady ? Math.max(0, Math.round(((item.originalSize - item.optimizedSize) / item.originalSize) * 100)) : 0;
+
+                const card = document.createElement('div');
+                card.className = 'glass-card rounded-2xl overflow-hidden flex flex-col justify-between transition hover:shadow-lg border border-slate-200/80';
+                card.innerHTML = `
+                    <div>
+                        <div class="relative h-44 transparency-grid flex items-center justify-center overflow-hidden group">
+                            <img src="${isReady ? item.optimizedUrl : item.originalUrl}" alt="${item.name}" class="max-h-full max-w-full object-contain p-2 transition-transform duration-300 group-hover:scale-105">
+                            <span class="absolute top-2.5 left-2.5 px-2.5 py-0.5 rounded-full bg-slate-900/75 text-white text-[10px] font-bold tracking-wider">
+                                ${item.format}
+                            </span>
+                            ${isReady ? `
+                                <span class="absolute top-2.5 right-2.5 px-2.5 py-0.5 rounded-full bg-emerald-500 text-white text-[11px] font-bold shadow-sm">
+                                    -${savedPercent}%
+                                </span>
+                            ` : ''}
+                        </div>
+                        <div class="p-4">
+                            <div class="font-display font-bold text-sm text-slate-900 truncate" title="${item.name}">${item.name}</div>
+                            <div class="flex items-center justify-between text-xs text-slate-500 mt-1.5">
+                                <span>${item.origWidth}×${item.origHeight} → <strong class="text-slate-700">${item.newWidth}×${item.newHeight}</strong></span>
+                            </div>
+                            <div class="flex items-center justify-between text-xs mt-2 pt-2 border-t border-slate-100">
+                                <span class="text-slate-400 line-through">${formatBytes(item.originalSize)}</span>
+                                <span class="font-bold text-indigo-600">${isReady ? formatBytes(item.optimizedSize) : 'Optimizing...'}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="px-4 pb-4 flex items-center gap-2">
+                        <button onclick="openInspector('${item.id}')" class="flex-1 py-2 px-3 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold transition text-center">
+                            Compare
+                        </button>
+                        <button onclick="downloadSingle('${item.id}')" ${!isReady ? 'disabled' : ''} class="flex-1 py-2 px-3 rounded-xl bg-slate-900 hover:bg-rose-500 text-white text-xs font-semibold transition text-center disabled:opacity-50">
+                            Download
+                        </button>
+                        <button onclick="removeItem('${item.id}')" class="p-2 rounded-xl bg-slate-100 hover:bg-rose-100 text-slate-500 hover:text-rose-600 transition" title="Remove">
+                            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23E11D48' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cline x1='18' y1='6' x2='6' y2='18'/%3E%3Cline x1='6' y1='6' x2='18' y2='18'/%3E%3C/svg%3E" alt="Remove" class="w-4 h-4">
+                        </button>
+                    </div>
+                `;
+                assetsGrid.appendChild(card);
+            });
+        }
+
+        // Update Summary Stats
+        function updateSummaryStats() {
+            const count = state.items.length;
+            document.getElementById('stat-count').textContent = count;
+
+            if (count === 0) {
+                batchBar.classList.add('hidden');
+                emptyStateTips.classList.remove('hidden');
+                inspectorSection.classList.add('hidden');
+                state.activeInspectId = null;
+                return;
+            }
+
+            const totalOrig = state.items.reduce((sum, i) => sum + i.originalSize, 0);
+            const totalOpt = state.items.reduce((sum, i) => sum + (i.optimizedSize || i.originalSize), 0);
+            const savedPct = totalOrig > 0 ? Math.max(0, Math.round(((totalOrig - totalOpt) / totalOrig) * 100)) : 0;
+
+            document.getElementById('stat-original').textContent = formatBytes(totalOrig);
+            document.getElementById('stat-optimized').textContent = formatBytes(totalOpt);
+            document.getElementById('stat-saved-pill').textContent = `-${savedPct}%`;
+        }
+
+        // Single File Download
+        window.downloadSingle = function(id) {
+            const item = state.items.find(i => i.id === id);
+            if (!item || !item.optimizedUrl) return;
+            const a = document.createElement('a');
+            a.href = item.optimizedUrl;
+            a.download = getOutputFilename(item);
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        };
+
+        // Remove Single Item
+        window.removeItem = function(id) {
+            const idx = state.items.findIndex(i => i.id === id);
+            if (idx === -1) return;
+            const [removed] = state.items.splice(idx, 1);
+            URL.revokeObjectURL(removed.originalUrl);
+            if (removed.optimizedUrl) URL.revokeObjectURL(removed.optimizedUrl);
+            if (state.activeInspectId === id) {
+                inspectorSection.classList.add('hidden');
+                state.activeInspectId = null;
+            }
+            renderCards();
+            updateSummaryStats();
+        };
+
+        // Clear All
+        clearAllBtn.addEventListener('click', () => {
+            state.items.forEach(item => {
+                URL.revokeObjectURL(item.originalUrl);
+                if (item.optimizedUrl) URL.revokeObjectURL(item.optimizedUrl);
+            });
+            state.items = [];
+            renderCards();
+            updateSummaryStats();
+            showToast('Cleared all images.');
+        });
+
+        // Batch Download ZIP
+        downloadZipBtn.addEventListener('click', async () => {
+            const readyItems = state.items.filter(i => i.optimizedBlob);
+            if (readyItems.length === 0) return;
+
+            try {
+                const zip = new JSZip();
+                const folder = zip.folder('Emage_Resizer_Optimized');
+
+                readyItems.forEach((item, index) => {
+                    let fileName = getOutputFilename(item);
+                    folder.file(`${index + 1}_${fileName}`, item.optimizedBlob);
+                });
+
+                const content = await zip.generateAsync({ type: 'blob' });
+                const zipUrl = URL.createObjectURL(content);
+                const a = document.createElement('a');
+                a.href = zipUrl;
+                a.download = `Emage_Resizer_by_Ravi_${new Date().toISOString().slice(0,10)}.zip`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                setTimeout(() => URL.revokeObjectURL(zipUrl), 5000);
+
+                showToast(`Downloaded ZIP with ${readyItems.length} optimized images!`);
+            } catch (err) {
+                showToast('Failed to create ZIP archive.', 'error');
+            }
+        });
+
+        // Before/After Inspector
+        window.openInspector = function(id) {
+            const item = state.items.find(i => i.id === id);
+            if (!item || !item.optimizedUrl) return;
+            state.activeInspectId = id;
+
+            inspectorFilename.textContent = item.name;
+            const savedPct = Math.max(0, Math.round(((item.originalSize - item.optimizedSize) / item.originalSize) * 100));
+            inspectorMetrics.textContent = `${formatBytes(item.originalSize)} → ${formatBytes(item.optimizedSize)} (-${savedPct}%)`;
+            badgeOrigSize.textContent = formatBytes(item.originalSize);
+            badgeOptSize.textContent = formatBytes(item.optimizedSize);
+
+            compareOptimizedImg.src = item.optimizedUrl;
+            compareOriginalImg.src = item.originalUrl;
+
+            inspectorSection.classList.remove('hidden');
+            setSliderPosition(50);
+            syncOverlayImageSize();
+        };
+
+        closeInspectorBtn.addEventListener('click', () => {
+            inspectorSection.classList.add('hidden');
+            state.activeInspectId = null;
+        });
+
+        function syncOverlayImageSize() {
+            const rect = comparisonBox.getBoundingClientRect();
+            compareOriginalImg.style.width = `${rect.width}px`;
+            compareOriginalImg.style.height = `${rect.height}px`;
+        }
+        window.addEventListener('resize', syncOverlayImageSize);
+
+        function setSliderPosition(percent) {
+            const clamped = Math.max(2, Math.min(98, percent));
+            compareOverlay.style.width = `${clamped}%`;
+            compareHandle.style.left = `${clamped}%`;
+        }
+
+        let isDraggingSlider = false;
+        comparisonBox.addEventListener('pointerdown', (e) => {
+            isDraggingSlider = true;
+            updateSliderFromEvent(e);
+        });
+        window.addEventListener('pointermove', (e) => {
+            if (!isDraggingSlider) return;
+            updateSliderFromEvent(e);
+        });
+        window.addEventListener('pointerup', () => {
+            isDraggingSlider = false;
+        });
+
+        function updateSliderFromEvent(e) {
+            const rect = comparisonBox.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const pct = (x / rect.width) * 100;
+            setSliderPosition(pct);
+        }
+    </script>
+</body>
+</html>
