@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Tuniefy — Smart Coaching & Teacher Workspace</title>
+  <link rel="manifest" href="/app/manifest.json" />
+  <meta name="theme-color" content="#0d9488" />
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            display: ['Plus Jakarta Sans', 'sans-serif'],
+          },
+          animation: {
+            'blob': 'blob 14s infinite',
+            'slide-up': 'slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+            'pop': 'pop 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) forwards',
+          },
+          keyframes: {
+            blob: {
+              '0%': { transform: 'translate(0px, 0px) scale(1)' },
+              '33%': { transform: 'translate(20px, -25px) scale(1.04)' },
+              '66%': { transform: 'translate(-15px, 15px) scale(0.97)' },
+              '100%': { transform: 'translate(0px, 0px) scale(1)' },
+            },
+            slideUp: {
+              '0%': { opacity: '0', transform: 'translateY(12px)' },
+              '100%': { opacity: '1', transform: 'translateY(0)' },
+            },
+            pop: {
+              '0%': { transform: 'scale(0.95)', opacity: '0' },
+              '100%': { transform: 'scale(1)', opacity: '1' },
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      background: #f0fdfa;
+      color: #0f172a;
+      overflow-x: hidden;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .glass-card {
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(22px);
+      -webkit-backdrop-filter: blur(22px);
+      border: 1px solid rgba(255, 255, 255, 0.98);
+      box-shadow: 0 14px 36px -10px rgba(13, 148, 136, 0.12), 0 4px 14px -3px rgba(15, 23, 42, 0.05);
+    }
+
+    .tactile-btn {
+      transition: all 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .tactile-btn:active {
+      transform: scale(0.96);
+    }
+  </style>
+</head>
+<body class="min-h-screen relative flex items-center justify-center p-4 selection:bg-teal-100 selection:text-teal-900">
+
+  <!-- Ambient Soft Teal Blobs -->
+  <div class="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
+    <div class="absolute -top-28 -left-24 w-96 h-96 bg-teal-200/50 rounded-full mix-blend-multiply filter blur-3xl animate-blob"></div>
+    <div class="absolute top-24 -right-24 w-96 h-96 bg-emerald-200/45 rounded-full mix-blend-multiply filter blur-3xl animate-blob" style="animation-delay: 3s;"></div>
+    <div class="absolute -bottom-24 left-1/3 w-96 h-96 bg-cyan-100/60 rounded-full mix-blend-multiply filter blur-3xl animate-blob" style="animation-delay: 6s;"></div>
+  </div>
+
+  <!-- Initial Loader -->
+  <div id="pageLoader" class="fixed inset-0 z-50 bg-teal-50/90 backdrop-blur-md flex flex-col items-center justify-center gap-3">
+    <div class="w-14 h-14 rounded-2xl bg-teal-600 text-white flex items-center justify-center shadow-lg shadow-teal-600/25 animate-pulse">
+      <i data-lucide="graduation-cap" class="w-7 h-7"></i>
+    </div>
+    <p class="font-display font-bold text-sm text-slate-800">Loading Tuniefy...</p>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- STEP 1: GOOGLE LOGIN SCREEN                -->
+  <!-- ========================================== -->
+  <section id="loginView" class="hidden w-full max-w-md space-y-6 animate-slide-up">
+    <!-- Logo & Brand Header -->
+    <div class="text-center space-y-2.5">
+      <div class="w-16 h-16 rounded-3xl bg-teal-600 text-white flex items-center justify-center mx-auto shadow-xl shadow-teal-600/25">
+        <i data-lucide="graduation-cap" class="w-8 h-8"></i>
+      </div>
+      <div>
+        <h1 class="font-display font-extrabold text-3xl tracking-tight text-slate-900">Tuniefy</h1>
+        <p class="text-xs font-medium text-slate-500 mt-1">Smart Coaching & Teacher Workspace</p>
+      </div>
+    </div>
+
+    <!-- Login Card -->
+    <div class="glass-card rounded-3xl p-6 sm:p-7 text-center space-y-5">
+      <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-teal-50 text-teal-700 border border-teal-100">
+        <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+        1-Click Teacher Access
+      </span>
+
+      <div class="space-y-1.5">
+        <h2 class="font-display font-extrabold text-xl text-slate-900 leading-snug">
+          Apne Coaching Portal Mein Login Karein
+        </h2>
+        <p class="text-xs text-slate-500 leading-relaxed">
+          Attendance, Monthly Fees aur WhatsApp PDF Reports ko ek jagah manage karein.
+        </p>
+      </div>
+
+      <button id="googleLoginBtn" onclick="handleGoogleLogin()" class="tactile-btn w-full py-3.5 px-5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-display font-bold text-sm shadow-lg shadow-slate-900/15 flex items-center justify-center gap-3">
+        <span class="w-6 h-6 rounded-full bg-white flex items-center justify-center shrink-0">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/>
+            <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.11-6.72-4.96H1.29v3.14C3.26 21.3 7.31 24 12 24z"/>
+            <path fill="#FBBC05" d="M5.28 14.24c-.24-.72-.38-1.49-.38-2.24s.14-1.52.38-2.24V6.62H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.38l3.99-3.14z"/>
+            <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.62l3.99 3.14c.95-2.85 3.6-4.96 6.72-4.96z"/>
+          </svg>
+        </span>
+        <span>Continue with Google</span>
+      </button>
+
+      <div class="pt-1 flex items-center justify-center gap-1.5 text-[11px] font-semibold text-teal-700">
+        <i data-lucide="lock" class="w-3.5 h-3.5"></i>
+        <span>100% Isolated Account • Safe & Secure</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================== -->
+  <!-- STEP 2: PLAN SELECTION SCREEN              -->
+  <!-- ========================================== -->
+  <section id="planView" class="hidden w-full max-w-md glass-card rounded-3xl p-5 sm:p-6 space-y-5 animate-slide-up">
+    <!-- Top Bar -->
+    <div class="flex items-start justify-between gap-2">
+      <div>
+        <span class="inline-block px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-teal-50 text-teal-700 border border-teal-100">
+          Step 2 of 2 • Choose Your Plan
+        </span>
+        <h2 class="font-display font-extrabold text-xl sm:text-2xl text-slate-900 mt-2 leading-tight">
+          Apna Tuniefy Plan Chunein
+        </h2>
+        <p class="text-xs text-slate-500 mt-1 leading-relaxed">
+          Hamesha ke liye Free Plan chunein ya Pro Plan ko 7 din bilkul free test karein.
+        </p>
+      </div>
+      <button onclick="handleLogout()" title="Sign Out" class="tactile-btn p-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200/70 shrink-0">
+        <i data-lucide="log-out" class="w-4 h-4"></i>
+      </button>
+    </div>
+
+    <!-- PLAN 1: PERMANENT FREE PLAN (₹0 FOREVER) -->
+    <div class="rounded-3xl p-5 bg-white border-2 border-teal-500/80 shadow-sm space-y-4">
+      <div class="flex items-center justify-between">
+        <span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-teal-50 text-teal-700">
+          Free Forever
+        </span>
+        <span class="text-xs font-semibold text-slate-500">Lifetime Access</span>
+      </div>
+
+      <div>
+        <div class="flex items-baseline gap-1">
+          <span class="font-display text-3xl font-extrabold text-slate-900">₹0</span>
+          <span class="text-xs font-semibold text-slate-500">/ forever</span>
+        </div>
+        <p class="text-xs text-slate-500 mt-1">
+          Basic attendance aur monthly fees register, hamesha ke liye bilkul free.
+        </p>
+      </div>
+
+      <ul class="space-y-2 text-xs font-medium text-slate-700">
+        <li class="flex items-center gap-2">
+          <i data-lucide="check-circle-2" class="w-4 h-4 text-teal-600 shrink-0"></i>
+          <span>Daily Attendance & Old Date Records</span>
+        </li>
+        <li class="flex items-center gap-2">
+          <i data-lucide="check-circle-2" class="w-4 h-4 text-teal-600 shrink-0"></i>
+          <span>Monthly Fees Register (Jama / Baki)</span>
+        </li>
+        <li class="flex items-center gap-2">
+          <i data-lucide="check-circle-2" class="w-4 h-4 text-teal-600 shrink-0"></i>
+          <span>Local Device Storage Mode</span>
+        </li>
+        <li class="flex items-center gap-2 text-slate-400">
+          <i data-lucide="lock" class="w-4 h-4 shrink-0"></i>
+          <span>WhatsApp Alerts & Graphic PDF (Pro Only)</span>
+        </li>
+      </ul>
+
+      <button id="selectFreeBtn" onclick="activateFreePlan()" class="tactile-btn w-full py-3.5 px-4 rounded-2xl bg-teal-600 hover:bg-teal-700 text-white font-display font-bold text-xs shadow-md shadow-teal-600/20 flex items-center justify-center gap-2">
+        <span>Continue with Free Plan</span>
+        <i data-lucide="arrow-right" class="w-4 h-4"></i>
+      </button>
+    </div>
+
+    <!-- PLAN 2: PRO UNLIMITED (₹99/MO WITH 7 DAYS FREE TRIAL) -->
+    <div class="rounded-3xl p-5 bg-slate-900 text-white shadow-xl space-y-4 border border-slate-800">
+      <div class="flex items-center justify-between">
+        <span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-amber-400/20 text-amber-300 border border-amber-400/30">
+          Pro Unlimited
+        </span>
+        <span class="text-xs font-semibold text-teal-300">7 Days Free Trial</span>
+      </div>
+
+      <div>
+        <div class="flex items-baseline gap-1.5">
+          <span class="font-display text-3xl font-extrabold text-white">₹99</span>
+          <span class="text-xs font-medium text-slate-300">/ month</span>
+        </div>
+        <p class="text-xs text-slate-300 mt-1">
+          Pehle 7 din saare Pro features bilkul free test karein, uske baad ₹99/month.
+        </p>
+      </div>
+
+      <ul class="space-y-2 text-xs font-medium text-slate-200">
+        <li class="flex items-center gap-2">
+          <i data-lucide="check-circle-2" class="w-4 h-4 text-teal-400 shrink-0"></i>
+          <span>Permanent Cloud Sync & Auto Backup</span>
+        </li>
+        <li class="flex items-center gap-2">
+          <i data-lucide="check-circle-2" class="w-4 h-4 text-teal-400 shrink-0"></i>
+          <span>Instant 1-Click WhatsApp Fee & Attendance Alerts</span>
+        </li>
+        <li class="flex items-center gap-2">
+          <i data-lucide="check-circle-2" class="w-4 h-4 text-teal-400 shrink-0"></i>
+          <span>Mobile Graphic PDF Reports (Attendance & Fees)</span>
+        </li>
+        <li class="flex items-center gap-2">
+          <i data-lucide="check-circle-2" class="w-4 h-4 text-teal-400 shrink-0"></i>
+          <span>Unlimited Students & Batches</span>
+        </li>
+      </ul>
+
+      <div class="space-y-2 pt-1">
+        <button id="startProTrialBtn" onclick="activateProTrial()" class="tactile-btn w-full py-3.5 px-4 rounded-2xl bg-white hover:bg-teal-50 text-slate-900 font-display font-bold text-xs shadow-lg flex items-center justify-center gap-2">
+          <span>Start 7 Days Pro Free Trial</span>
+          <i data-lucide="crown" class="w-4 h-4 text-amber-500"></i>
+        </button>
+
+        <button onclick="window.location.href='payment.html'" class="tactile-btn w-full py-2.5 px-4 rounded-xl bg-white/10 hover:bg-white/15 text-teal-200 font-display font-bold text-[11px] flex items-center justify-center gap-1.5">
+          <span>Ya seedhe Premium lein (₹99/mo)</span>
+          <i data-lucide="arrow-up-right" class="w-3.5 h-3.5"></i>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Toast -->
+  <div id="toast" class="fixed top-6 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 transition-all duration-300 transform -translate-y-2 max-w-[90vw]">
+    <div class="px-4 py-2.5 rounded-2xl bg-slate-900 text-white text-xs font-semibold shadow-xl flex items-center gap-2">
+      <i data-lucide="info" class="w-4 h-4 text-teal-400 shrink-0"></i>
+      <span id="toastMsg">Processing...</span>
+    </div>
+  </div>
+
+  <!-- Firebase Auth & Plan Routing -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAIDciHhY5fuU3DWDczVxkvipXS5jI-1_g",
+      authDomain: "tuniefy.firebaseapp.com",
+      projectId: "tuniefy",
+      storageBucket: "tuniefy.firebasestorage.app",
+      messagingSenderId: "991800434118",
+      appId: "1:991800434118:web:d25c0ad245eed0b3db26c7",
+      measurementId: "G-ETCP6548T0"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const provider = new GoogleAuthProvider();
+
+    let currentUser = null;
+    let existingProfile = null;
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const forcePlanScreen = urlParams.get('plan') === 'choose';
+
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        currentUser = null;
+        document.getElementById('pageLoader').classList.add('hidden');
+        document.getElementById('planView').classList.add('hidden');
+        document.getElementById('loginView').classList.remove('hidden');
+        lucide.createIcons();
+        return;
+      }
+
+      currentUser = user;
+      try {
+        const profRef = doc(db, "teachers", user.uid, "profile", "info");
+        const profSnap = await getDoc(profRef);
+
+        if (profSnap.exists()) {
+          existingProfile = profSnap.data();
+          // If teacher already chose any plan & didn't explicitly request plan screen, go directly to dashboard
+          if (!forcePlanScreen && existingProfile.planType) {
+            window.location.href = 'home.html';
+            return;
+          }
+
+          // If trial was already used once, hide the 7-day trial button to avoid repeat abuse
+          if (existingProfile.trialUsed) {
+            const trialBtn = document.getElementById('startProTrialBtn');
+            trialBtn.innerHTML = `<span>Activate Premium (₹99/mo)</span> <i data-lucide="crown" class="w-4 h-4 text-amber-500"></i>`;
+            trialBtn.onclick = () => { window.location.href = 'payment.html'; };
+          }
+        }
+
+        document.getElementById('pageLoader').classList.add('hidden');
+        document.getElementById('loginView').classList.add('hidden');
+        document.getElementById('planView').classList.remove('hidden');
+        lucide.createIcons();
+      } catch (err) {
+        console.error(err);
+        document.getElementById('pageLoader').classList.add('hidden');
+        document.getElementById('planView').classList.remove('hidden');
+        lucide.createIcons();
+      }
+    });
+
+    window.handleGoogleLogin = async function() {
+      const btn = document.getElementById('googleLoginBtn');
+      const original = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = `<span>Signing in...</span>`;
+      try {
+        await signInWithPopup(auth, provider);
+      } catch (err) {
+        console.error(err);
+        showToast('Google login cancel hua ya error aaya.');
+        btn.disabled = false;
+        btn.innerHTML = original;
+      }
+    };
+
+    // Option 1: Permanent Free Plan (₹0 forever)
+    window.activateFreePlan = async function() {
+      if (!currentUser) return;
+      const btn = document.getElementById('selectFreeBtn');
+      btn.disabled = true;
+      btn.innerHTML = `<span>Setting up Free Plan...</span>`;
+
+      try {
+        const profRef = doc(db, "teachers", currentUser.uid, "profile", "info");
+        await setDoc(profRef, {
+          teacherId: currentUser.uid,
+          name: currentUser.displayName || currentUser.email.split('@')[0],
+          email: currentUser.email,
+          photoURL: currentUser.photoURL || '',
+          planType: 'FREE',
+          subscriptionStatus: 'ACTIVE',
+          planExpiryDate: null,
+          updatedAt: new Date().toISOString()
+        }, { merge: true });
+
+        window.location.href = 'home.html';
+      } catch (err) {
+        console.error(err);
+        showToast('Plan save karne mein dikkat aayi.');
+        btn.disabled = false;
+        btn.innerHTML = `<span>Continue with Free Plan</span>`;
+      }
+    };
+
+    // Option 2: 7 Days Free Trial of ₹99 Pro Plan
+    window.activateProTrial = async function() {
+      if (!currentUser) return;
+      const btn = document.getElementById('startProTrialBtn');
+      btn.disabled = true;
+      btn.innerHTML = `<span>Activating 7-Day Pro Trial...</span>`;
+
+      try {
+        const expiryDate = new Date();
+        expiryDate.setDate(expiryDate.getDate() + 7);
+
+        const profRef = doc(db, "teachers", currentUser.uid, "profile", "info");
+        await setDoc(profRef, {
+          teacherId: currentUser.uid,
+          name: currentUser.displayName || currentUser.email.split('@')[0],
+          email: currentUser.email,
+          photoURL: currentUser.photoURL || '',
+          planType: 'PRO_TRIAL',
+          subscriptionStatus: 'ACTIVE',
+          trialUsed: true,
+          trialStartDate: new Date().toISOString(),
+          planExpiryDate: expiryDate.toISOString(),
+          updatedAt: new Date().toISOString()
+        }, { merge: true });
+
+        window.location.href = 'home.html';
+      } catch (err) {
+        console.error(err);
+        showToast('Trial activate karne mein error aaya.');
+        btn.disabled = false;
+        btn.innerHTML = `<span>Start 7 Days Pro Free Trial</span>`;
+      }
+    };
+
+    window.handleLogout = async function() {
+      await signOut(auth);
+      window.location.reload();
+    };
+
+    let toastTimer;
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toastMsg').textContent = msg;
+      toast.classList.remove('opacity-0', '-translate-y-2');
+      toast.classList.add('opacity-100', 'translate-y-0');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        toast.classList.add('opacity-0', '-translate-y-2');
+        toast.classList.remove('opacity-100', 'translate-y-0');
+      }, 2800);
+    }
+
+    lucide.createIcons();
+  </script>
+</body>
+</html>

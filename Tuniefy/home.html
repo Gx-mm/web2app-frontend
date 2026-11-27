@@ -1,0 +1,1594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Tuniefy — Teacher Dashboard & Fee Portal</title>
+  <link rel="manifest" href="/app/manifest.json" />
+  <meta name="theme-color" content="#0d9488" />
+  <!-- Google Fonts: Plus Jakarta Sans & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- html2pdf.js for Rich Colored Graphic PDF Generation -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            display: ['Plus Jakarta Sans', 'sans-serif'],
+          },
+          animation: {
+            'blob': 'blob 14s infinite',
+            'slide-up': 'slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+            'pop': 'pop 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) forwards',
+          },
+          keyframes: {
+            blob: {
+              '0%': { transform: 'translate(0px, 0px) scale(1)' },
+              '33%': { transform: 'translate(20px, -25px) scale(1.04)' },
+              '66%': { transform: 'translate(-15px, 15px) scale(0.97)' },
+              '100%': { transform: 'translate(0px, 0px) scale(1)' },
+            },
+            slideUp: {
+              '0%': { opacity: '0', transform: 'translateY(10px)' },
+              '100%': { opacity: '1', transform: 'translateY(0)' },
+            },
+            pop: {
+              '0%': { transform: 'scale(0.95)', opacity: '0' },
+              '100%': { transform: 'scale(1)', opacity: '1' },
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      background: #f0fdfa;
+      color: #0f172a;
+      overflow-x: hidden;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Bright White Frosted Glassmorphism matching index.html */
+    .glass-card {
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.98);
+      box-shadow: 0 10px 28px -6px rgba(13, 148, 136, 0.09), 0 4px 12px -3px rgba(15, 23, 42, 0.04);
+      transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.2s ease;
+    }
+
+    .glass-card:hover {
+      box-shadow: 0 16px 34px -8px rgba(13, 148, 136, 0.14), 0 6px 16px -4px rgba(15, 23, 42, 0.06);
+    }
+
+    .glass-nav {
+      background: rgba(255, 255, 255, 0.94);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border-top: 1px solid rgba(13, 148, 136, 0.14);
+      box-shadow: 0 -8px 25px -5px rgba(15, 23, 42, 0.05);
+    }
+
+    .glass-header {
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(22px);
+      -webkit-backdrop-filter: blur(22px);
+      border-bottom: 1px solid rgba(204, 251, 241, 0.9);
+    }
+
+    .tactile-btn {
+      transition: all 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .tactile-btn:active {
+      transform: scale(0.94);
+    }
+
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    #pdfCanvasWrapper {
+      font-family: 'Inter', sans-serif;
+      color: #0f172a;
+      background: #ffffff;
+      width: 380px;
+      max-width: 100%;
+      margin: 0 auto;
+      box-sizing: border-box;
+    }
+  </style>
+</head>
+<body class="min-h-screen relative selection:bg-teal-100 selection:text-teal-900 pb-28">
+
+  <!-- Auth Loading Overlay -->
+  <div id="authGateLoader" class="fixed inset-0 z-50 bg-teal-50 flex flex-col items-center justify-center gap-3">
+    <div class="w-14 h-14 rounded-2xl bg-teal-600 text-white flex items-center justify-center shadow-lg shadow-teal-600/25 animate-pulse">
+      <i data-lucide="shield-check" class="w-7 h-7"></i>
+    </div>
+    <p class="font-display font-bold text-sm text-slate-800">Loading Tuniefy Workspace...</p>
+  </div>
+
+  <!-- Upgrade / Premium Plan Popup -->
+  <div id="subGateOverlay" class="fixed inset-0 z-50 hidden bg-slate-900/75 backdrop-blur-md items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-6 text-center space-y-5 shadow-2xl border border-teal-100 animate-pop">
+      <div class="w-16 h-16 rounded-3xl bg-teal-50 text-teal-600 flex items-center justify-center mx-auto border border-teal-100">
+        <i data-lucide="crown" class="w-8 h-8"></i>
+      </div>
+      <div class="space-y-2">
+        <span class="inline-block px-3 py-1 rounded-full bg-amber-50 text-amber-700 text-[10px] font-extrabold uppercase tracking-wider border border-amber-200">
+          Free Plan Active • Local Storage Mode
+        </span>
+        <h3 class="font-display font-extrabold text-xl text-slate-900">Tuniefy Pro Mein Upgrade Karein</h3>
+        <p id="subGateMessage" class="text-xs text-slate-600 leading-relaxed">
+          Abhi aapka data <strong>Local Storage</strong> par save ho raha hai (app delete hone par data hat sakta hai). Permanent Cloud Sync, PDF Reports aur WhatsApp Alerts ke liye Pro Plan lein.
+        </p>
+      </div>
+
+      <div class="bg-slate-50 rounded-2xl p-3.5 text-left space-y-2 border border-slate-100 text-xs">
+        <div class="flex items-center gap-2 text-slate-700 font-medium">
+          <i data-lucide="check-circle-2" class="w-4 h-4 text-teal-600 shrink-0"></i>
+          <span>Permanent Cloud Backup & Sync</span>
+        </div>
+        <div class="flex items-center gap-2 text-slate-700 font-medium">
+          <i data-lucide="check-circle-2" class="w-4 h-4 text-teal-600 shrink-0"></i>
+          <span>1-Click WhatsApp Fee & Attendance Alerts</span>
+        </div>
+        <div class="flex items-center gap-2 text-slate-700 font-medium">
+          <i data-lucide="check-circle-2" class="w-4 h-4 text-teal-600 shrink-0"></i>
+          <span>Mobile Graphic PDF Reports</span>
+        </div>
+      </div>
+
+      <div class="space-y-2 pt-1">
+        <button onclick="window.location.href='payment.html'" class="tactile-btn w-full py-3.5 px-4 rounded-2xl bg-teal-600 hover:bg-teal-700 text-white font-display font-bold text-xs shadow-lg shadow-teal-600/25 flex items-center justify-center gap-2">
+          <i data-lucide="zap" class="w-4 h-4"></i>
+          <span>Plan Upgrade Karein (₹99/mo)</span>
+        </button>
+        <button onclick="closeSubGate()" class="w-full py-2.5 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition-colors">
+          Abhi Free Plan Continue Karein
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Teacher Profile Modal (Includes Logout) -->
+  <div id="profileModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+    <div class="bg-white rounded-3xl max-w-sm w-full shadow-2xl border border-teal-100 overflow-hidden animate-pop">
+      <div class="px-5 py-4 bg-teal-600 text-white flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <i data-lucide="user-circle-2" class="w-5 h-5"></i>
+          <h3 class="font-display font-bold text-base">Teacher Profile</h3>
+        </div>
+        <button onclick="closeProfileModal()" class="p-1.5 rounded-xl bg-white/15 hover:bg-white/25">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="p-5 space-y-4">
+        <div class="flex items-center gap-3.5">
+          <div id="profileAvatarBox" class="w-14 h-14 rounded-2xl bg-teal-50 text-teal-700 border border-teal-200 font-display font-extrabold text-lg flex items-center justify-center shrink-0 overflow-hidden">
+            T
+          </div>
+          <div class="min-w-0">
+            <h4 id="profileTeacherName" class="font-display font-extrabold text-base text-slate-900 truncate">Teacher Name</h4>
+            <p id="profileTeacherEmail" class="text-xs text-slate-500 truncate">teacher@email.com</p>
+          </div>
+        </div>
+
+        <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/70 space-y-1.5">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Current Plan</span>
+            <span id="profilePlanPill" class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-800">FREE PLAN</span>
+          </div>
+          <p id="profilePlanDesc" class="text-xs text-slate-600">Local Device Storage active hai.</p>
+        </div>
+
+        <div id="profileUpgradeWrap" class="pt-0.5">
+          <button onclick="window.location.href='payment.html'" class="tactile-btn w-full py-3 px-4 rounded-2xl bg-teal-600 hover:bg-teal-700 text-white font-display font-bold text-xs shadow-md shadow-teal-600/20 flex items-center justify-center gap-2">
+            <i data-lucide="crown" class="w-4 h-4"></i>
+            <span>Upgrade to Pro Unlimited (₹99/mo)</span>
+          </button>
+        </div>
+
+        <div class="pt-2 border-t border-slate-100">
+          <button onclick="handleLogout()" class="tactile-btn w-full py-3 px-4 rounded-2xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200/70 font-display font-bold text-xs flex items-center justify-center gap-2">
+            <i data-lucide="log-out" class="w-4 h-4"></i>
+            <span>Logout Account</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ambient Soft Teal Blobs -->
+  <div class="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
+    <div class="absolute -top-28 -left-24 w-96 h-96 bg-teal-200/45 rounded-full mix-blend-multiply filter blur-3xl animate-blob"></div>
+    <div class="absolute top-20 -right-24 w-96 h-96 bg-emerald-200/40 rounded-full mix-blend-multiply filter blur-3xl animate-blob" style="animation-delay: 3s;"></div>
+    <div class="absolute -bottom-24 left-1/3 w-96 h-96 bg-cyan-100/55 rounded-full mix-blend-multiply filter blur-3xl animate-blob" style="animation-delay: 6s;"></div>
+  </div>
+
+  <!-- Sticky Top App Header (Tuniefy Branding + Profile Button) -->
+  <header class="glass-header sticky top-0 z-30">
+    <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
+      <div class="flex items-center gap-2.5 min-w-0">
+        <div class="w-10 h-10 rounded-2xl bg-teal-600 flex items-center justify-center text-white shadow-md shadow-teal-600/25 shrink-0">
+          <i data-lucide="graduation-cap" class="w-5 h-5"></i>
+        </div>
+        <div class="min-w-0">
+          <div class="flex items-center gap-1.5">
+            <h1 class="font-display font-extrabold text-base sm:text-lg tracking-tight text-slate-900 leading-none">
+              Tuniefy
+            </h1>
+            <button id="planStatusBadge" onclick="triggerSubGate()" class="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-amber-100 text-amber-800 border border-amber-200 shrink-0">
+              FREE
+            </button>
+          </div>
+          <span class="block mt-1 text-[10px] font-semibold text-teal-700 leading-none">
+            Teacher Workspace
+          </span>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
+        <input type="date" id="attendanceDateInput" onchange="handleDateChange()" class="px-2 py-1.5 rounded-xl text-xs font-semibold bg-white border border-slate-200 text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500/30" />
+        <button onclick="openStudentModal()" class="tactile-btn inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-xl text-xs font-bold bg-slate-900 text-white hover:bg-teal-600 shadow-sm">
+          <i data-lucide="user-plus" class="w-4 h-4"></i>
+          <span class="hidden sm:inline">Add Student</span>
+        </button>
+        <button onclick="openProfileModal()" title="Teacher Profile" class="tactile-btn w-9 h-9 rounded-xl bg-teal-50 hover:bg-teal-100 text-teal-700 border border-teal-200/80 flex items-center justify-center overflow-hidden">
+          <span id="headerProfileIcon" class="flex items-center justify-center w-full h-full">
+            <i data-lucide="user" class="w-4 h-4"></i>
+          </span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-4xl mx-auto px-4 pt-5">
+
+    <!-- ========================================== -->
+    <!-- SECTION 1: DASHBOARD                       -->
+    <!-- ========================================== -->
+    <section id="section-dashboard" class="app-section space-y-5 animate-slide-up">
+      
+      <!-- Free Plan Warning Banner (Only visible for Free Users) -->
+      <div id="freePlanBanner" class="hidden glass-card rounded-2xl p-3.5 bg-amber-50/90 border-amber-200/80 flex items-center justify-between gap-3">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+            <i data-lucide="hard-drive" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <p class="font-display font-bold text-xs text-slate-900">Local Storage Mode Active</p>
+            <p class="text-[11px] text-slate-600">Cloud sync, PDF aur WhatsApp alerts ke liye upgrade karein.</p>
+          </div>
+        </div>
+        <button onclick="window.location.href='payment.html'" class="tactile-btn px-3 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold shrink-0 shadow-sm">
+          Upgrade
+        </button>
+      </div>
+
+      <!-- Pro Trial Active Banner -->
+      <div id="trialPlanBanner" class="hidden glass-card rounded-2xl p-3.5 bg-teal-50/95 border-teal-200 flex items-center justify-between gap-3">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-xl bg-teal-600 text-white flex items-center justify-center shrink-0">
+            <i data-lucide="crown" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <p id="trialBannerTitle" class="font-display font-bold text-xs text-slate-900">7-Day Pro Free Trial Active</p>
+            <p class="text-[11px] text-teal-800">Saare Pro features (Cloud, PDF & WhatsApp) unlocked hain.</p>
+          </div>
+        </div>
+        <button onclick="window.location.href='payment.html'" class="tactile-btn px-3 py-2 rounded-xl bg-slate-900 text-white text-xs font-bold shrink-0">
+          Go Pro
+        </button>
+      </div>
+
+      <!-- Top KPI Summary Cards -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div class="glass-card rounded-2xl p-4">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total</span>
+            <span class="w-8 h-8 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center">
+              <i data-lucide="users" class="w-4 h-4"></i>
+            </span>
+          </div>
+          <div class="mt-2 flex items-baseline gap-1.5">
+            <span id="dashTotal" class="font-display text-2xl sm:text-3xl font-extrabold text-slate-900">0</span>
+            <span class="text-xs text-slate-500 font-medium">Students</span>
+          </div>
+        </div>
+
+        <div class="glass-card rounded-2xl p-4 border-teal-100">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-bold text-teal-700 uppercase tracking-wider">Present</span>
+            <span class="w-8 h-8 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center">
+              <i data-lucide="user-check" class="w-4 h-4"></i>
+            </span>
+          </div>
+          <div class="mt-2 flex items-baseline gap-1.5">
+            <span id="dashPresent" class="font-display text-2xl sm:text-3xl font-extrabold text-teal-600">0</span>
+            <span id="dashPresentPct" class="text-xs font-bold text-teal-600/80">0%</span>
+          </div>
+        </div>
+
+        <div class="glass-card rounded-2xl p-4 border-rose-100">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-bold text-rose-700 uppercase tracking-wider">Absent</span>
+            <span class="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center">
+              <i data-lucide="user-x" class="w-4 h-4"></i>
+            </span>
+          </div>
+          <div class="mt-2 flex items-baseline gap-1.5">
+            <span id="dashAbsent" class="font-display text-2xl sm:text-3xl font-extrabold text-rose-600">0</span>
+            <span class="text-xs font-medium text-rose-500">Aaj Absent</span>
+          </div>
+        </div>
+
+        <div class="glass-card rounded-2xl p-4 border-amber-100">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-bold text-amber-700 uppercase tracking-wider">Fees Due</span>
+            <span class="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+              <i data-lucide="indian-rupee" class="w-4 h-4"></i>
+            </span>
+          </div>
+          <div class="mt-2 flex items-baseline gap-1.5">
+            <span id="dashFeeDue" class="font-display text-2xl sm:text-3xl font-extrabold text-amber-600">0</span>
+            <span class="text-xs font-medium text-amber-600/80">Baki Hai</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Batch-wise Breakdown Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+        <div class="glass-card rounded-2xl p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+              <div class="w-9 h-9 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center border border-teal-100">
+                <i data-lucide="sunrise" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <h3 class="font-display font-bold text-sm text-slate-900">Morning Batch 1</h3>
+                <p class="text-xs font-semibold text-teal-600">7:00 - 8:00 AM</p>
+              </div>
+            </div>
+            <span id="b1TotalBadge" class="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 text-xs font-bold">0 Students</span>
+          </div>
+          <div class="grid grid-cols-3 gap-2 pt-1 text-center">
+            <div class="p-2 rounded-xl bg-teal-50/75">
+              <div id="b1Present" class="font-display font-extrabold text-base text-teal-700">0</div>
+              <div class="text-[10px] font-semibold text-teal-600">Present</div>
+            </div>
+            <div class="p-2 rounded-xl bg-rose-50/75">
+              <div id="b1Absent" class="font-display font-extrabold text-base text-rose-700">0</div>
+              <div class="text-[10px] font-semibold text-rose-600">Absent</div>
+            </div>
+            <div class="p-2 rounded-xl bg-amber-50/75">
+              <div id="b1Due" class="font-display font-extrabold text-base text-amber-700">0</div>
+              <div class="text-[10px] font-semibold text-amber-600">Fee Due</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="glass-card rounded-2xl p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+              <div class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100">
+                <i data-lucide="sun" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <h3 class="font-display font-bold text-sm text-slate-900">Morning Batch 2</h3>
+                <p class="text-xs font-semibold text-emerald-600">8:00 - 9:00 AM</p>
+              </div>
+            </div>
+            <span id="b2TotalBadge" class="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 text-xs font-bold">0 Students</span>
+          </div>
+          <div class="grid grid-cols-3 gap-2 pt-1 text-center">
+            <div class="p-2 rounded-xl bg-teal-50/75">
+              <div id="b2Present" class="font-display font-extrabold text-base text-teal-700">0</div>
+              <div class="text-[10px] font-semibold text-teal-600">Present</div>
+            </div>
+            <div class="p-2 rounded-xl bg-rose-50/75">
+              <div id="b2Absent" class="font-display font-extrabold text-base text-rose-700">0</div>
+              <div class="text-[10px] font-semibold text-rose-600">Absent</div>
+            </div>
+            <div class="p-2 rounded-xl bg-amber-50/75">
+              <div id="b2Due" class="font-display font-extrabold text-base text-amber-700">0</div>
+              <div class="text-[10px] font-semibold text-amber-600">Fee Due</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Report Generator Card (Pro Feature) -->
+      <div class="glass-card rounded-3xl p-5 bg-white border-teal-100">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div class="space-y-1">
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-teal-50 text-teal-700">
+              <i data-lucide="crown" class="w-3.5 h-3.5"></i>
+              PRO • WhatsApp + Graphic PDF
+            </span>
+            <h2 class="font-display font-extrabold text-lg text-slate-900">Coaching Group Report Banayein</h2>
+            <p class="text-xs text-slate-600">Attendance ya Fees report chunein — WhatsApp message aur mobile-friendly graphic PDF taiyaar!</p>
+          </div>
+          <div class="flex flex-wrap gap-2 shrink-0">
+            <button onclick="openReportModal('ATTENDANCE')" class="tactile-btn px-4 py-3 rounded-2xl bg-teal-600 hover:bg-teal-700 text-white font-display font-bold text-xs shadow-lg shadow-teal-600/20 flex items-center gap-2">
+              <i data-lucide="clipboard-check" class="w-4 h-4"></i>
+              <span>Attendance Report</span>
+            </button>
+            <button onclick="openReportModal('FEES')" class="tactile-btn px-4 py-3 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-display font-bold text-xs shadow-lg shadow-slate-900/15 flex items-center gap-2">
+              <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
+              <span>Fee Report</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Storage & Backup Status Card -->
+      <div class="glass-card rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div class="flex items-start gap-3">
+          <div id="storageIconBox" class="w-9 h-9 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center shrink-0 mt-0.5">
+            <i data-lucide="database" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 id="storageTitle" class="font-display font-bold text-xs sm:text-sm text-slate-900">Storage & Backup</h3>
+            <p id="storageSubtitle" class="text-[11px] text-slate-500">Apne records ka JSON backup export ya restore karein.</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 shrink-0">
+          <button onclick="exportBackupJSON()" class="tactile-btn px-3 py-2 rounded-xl text-xs font-bold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 flex items-center gap-1.5">
+            <i data-lucide="download" class="w-3.5 h-3.5 text-teal-600"></i>
+            <span>Export JSON</span>
+          </button>
+          <label class="tactile-btn px-3 py-2 rounded-xl text-xs font-bold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 flex items-center gap-1.5 cursor-pointer">
+            <i data-lucide="upload" class="w-3.5 h-3.5 text-emerald-600"></i>
+            <span>Import JSON</span>
+            <input type="file" accept=".json,application/json" onchange="importBackupJSON(event)" class="hidden" />
+          </label>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ========================================== -->
+    <!-- SECTION 2: ATTENDANCE ONLY (LINE BY LINE)  -->
+    <!-- ========================================== -->
+    <section id="section-attendance" class="app-section hidden space-y-4 animate-slide-up">
+      <div class="glass-card rounded-2xl p-3.5 space-y-3">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+          <div>
+            <h2 class="font-display font-extrabold text-base text-slate-900">Daily Attendance Sheet</h2>
+            <p class="text-xs text-slate-500">Kisi bhi date ki attendance mark aur check karein</p>
+          </div>
+          <button onclick="openReportModal('ATTENDANCE')" class="tactile-btn px-3.5 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold shadow-md shadow-teal-600/20 flex items-center justify-center gap-1.5">
+            <i data-lucide="file-text" class="w-4 h-4"></i>
+            <span>Attendance Report + PDF</span>
+          </button>
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-2.5 pt-2 border-t border-slate-100">
+          <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar" id="attBatchFilters">
+            <button onclick="setSectionBatch('attendance', 'ALL')" data-b="ALL" class="att-batch-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-900 text-white whitespace-nowrap">All Batches</button>
+            <button onclick="setSectionBatch('attendance', '7:00 - 8:00 AM')" data-b="7:00 - 8:00 AM" class="att-batch-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 text-slate-600 whitespace-nowrap">7:00 - 8:00 AM</button>
+            <button onclick="setSectionBatch('attendance', '8:00 - 9:00 AM')" data-b="8:00 - 9:00 AM" class="att-batch-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 text-slate-600 whitespace-nowrap">8:00 - 9:00 AM</button>
+          </div>
+          <div class="relative flex-1">
+            <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
+            <input type="text" id="attSearchInput" oninput="renderAttendanceList()" placeholder="Student naam khojein..." class="w-full pl-8 pr-3 py-1.5 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500/25" />
+          </div>
+          <button onclick="markAllFilteredPresent()" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-teal-50 text-teal-700 hover:bg-teal-100 whitespace-nowrap">
+            All Present
+          </button>
+        </div>
+      </div>
+
+      <div id="attendanceListContainer" class="space-y-2"></div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- SECTION 3: FEES TRACKER ONLY               -->
+    <!-- ========================================== -->
+    <section id="section-fees" class="app-section hidden space-y-4 animate-slide-up">
+      <div class="glass-card rounded-2xl p-3.5 space-y-3">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+          <div>
+            <h2 class="font-display font-extrabold text-base text-slate-900">Monthly Fees Register</h2>
+            <p class="text-xs text-slate-500">Mahine par tap karke Jama (Green) ya Baki (Red) mark karein</p>
+          </div>
+          <button onclick="openReportModal('FEES')" class="tactile-btn px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-teal-600 text-white text-xs font-bold shadow-md flex items-center justify-center gap-1.5">
+            <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
+            <span>Fee Report + PDF</span>
+          </button>
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-2.5 pt-2 border-t border-slate-100">
+          <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar" id="feeBatchFilters">
+            <button onclick="setSectionBatch('fees', 'ALL')" data-b="ALL" class="fee-batch-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-900 text-white whitespace-nowrap">All Batches</button>
+            <button onclick="setSectionBatch('fees', '7:00 - 8:00 AM')" data-b="7:00 - 8:00 AM" class="fee-batch-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 text-slate-600 whitespace-nowrap">7:00 - 8:00 AM</button>
+            <button onclick="setSectionBatch('fees', '8:00 - 9:00 AM')" data-b="8:00 - 9:00 AM" class="fee-batch-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 text-slate-600 whitespace-nowrap">8:00 - 9:00 AM</button>
+            <button onclick="setSectionBatch('fees', 'DUE_ONLY')" data-b="DUE_ONLY" class="fee-batch-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-rose-50 text-rose-600 whitespace-nowrap">Only Fee Due</button>
+          </div>
+          <div class="relative flex-1">
+            <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
+            <input type="text" id="feeSearchInput" oninput="renderFeesList()" placeholder="Student naam khojein..." class="w-full pl-8 pr-3 py-1.5 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500/25" />
+          </div>
+        </div>
+      </div>
+
+      <div id="feesListContainer" class="space-y-3"></div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- SECTION 4: STUDENTS MANAGE (ADD/EDIT/DEL)  -->
+    <!-- ========================================== -->
+    <section id="section-students" class="app-section hidden space-y-4 animate-slide-up">
+      <div class="glass-card rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h2 class="font-display font-extrabold text-base text-slate-900">My Students Directory</h2>
+          <p class="text-xs text-slate-500">Naya student add karein, edit/delete karein ya WhatsApp alert bhejein</p>
+        </div>
+        <button onclick="openStudentModal()" class="tactile-btn px-4 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold shadow-md shadow-teal-600/20 flex items-center justify-center gap-1.5">
+          <i data-lucide="plus-circle" class="w-4 h-4"></i>
+          <span>+ Add New Student</span>
+        </button>
+      </div>
+
+      <div class="flex flex-col sm:flex-row gap-2.5">
+        <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar" id="stuBatchFilters">
+          <button onclick="setSectionBatch('students', 'ALL')" data-b="ALL" class="stu-batch-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-900 text-white whitespace-nowrap">All Students</button>
+          <button onclick="setSectionBatch('students', '7:00 - 8:00 AM')" data-b="7:00 - 8:00 AM" class="stu-batch-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-white border border-slate-200 text-slate-600 whitespace-nowrap">7:00 - 8:00 AM</button>
+          <button onclick="setSectionBatch('students', '8:00 - 9:00 AM')" data-b="8:00 - 9:00 AM" class="stu-batch-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-white border border-slate-200 text-slate-600 whitespace-nowrap">8:00 - 9:00 AM</button>
+        </div>
+        <div class="relative flex-1">
+          <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
+          <input type="text" id="stuSearchInput" oninput="renderStudentsDirectory()" placeholder="Naam, Roll No ya WhatsApp number search karein..." class="w-full pl-8 pr-3 py-1.5 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500/25" />
+        </div>
+      </div>
+
+      <div id="studentsDirectoryContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+    </section>
+
+  </main>
+
+  <!-- Fixed Bottom 4-Tab Navigation Bar -->
+  <nav class="glass-nav fixed bottom-0 inset-x-0 z-30">
+    <div class="max-w-4xl mx-auto px-2 py-2 grid grid-cols-4 gap-1">
+      <button onclick="switchTab('dashboard')" data-tab="dashboard" class="nav-tab flex flex-col items-center justify-center py-1.5 px-2 rounded-2xl text-teal-700 bg-teal-50/95 font-bold transition-all">
+        <i data-lucide="layout-dashboard" class="w-5 h-5 mb-0.5"></i>
+        <span class="text-[11px]">Dashboard</span>
+      </button>
+      <button onclick="switchTab('attendance')" data-tab="attendance" class="nav-tab flex flex-col items-center justify-center py-1.5 px-2 rounded-2xl text-slate-500 hover:text-slate-900 font-semibold transition-all">
+        <i data-lucide="check-square" class="w-5 h-5 mb-0.5"></i>
+        <span class="text-[11px]">Attendance</span>
+      </button>
+      <button onclick="switchTab('fees')" data-tab="fees" class="nav-tab flex flex-col items-center justify-center py-1.5 px-2 rounded-2xl text-slate-500 hover:text-slate-900 font-semibold transition-all">
+        <i data-lucide="indian-rupee" class="w-5 h-5 mb-0.5"></i>
+        <span class="text-[11px]">Fees</span>
+      </button>
+      <button onclick="switchTab('students')" data-tab="students" class="nav-tab flex flex-col items-center justify-center py-1.5 px-2 rounded-2xl text-slate-500 hover:text-slate-900 font-semibold transition-all">
+        <i data-lucide="users" class="w-5 h-5 mb-0.5"></i>
+        <span class="text-[11px]">Students</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ========================================== -->
+  <!-- MODAL 1: ADD / EDIT STUDENT                -->
+  <!-- ========================================== -->
+  <div id="studentModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+    <div class="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-slate-100 overflow-hidden animate-pop">
+      <div class="px-5 py-4 bg-teal-600 text-white flex items-center justify-between">
+        <div>
+          <h3 id="studentModalTitle" class="font-display font-bold text-base">Add New Student</h3>
+          <p class="text-[11px] text-white/85">Tuniefy • Student Record</p>
+        </div>
+        <button onclick="closeStudentModal()" class="p-1.5 rounded-xl bg-white/15 hover:bg-white/25">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form onsubmit="saveStudentForm(event)" class="p-5 space-y-3.5">
+        <input type="hidden" id="editStudentId" value="" />
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Student Full Name *</label>
+          <input type="text" id="stuNameInput" required placeholder="e.g., Rahul Kumar" class="w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500" />
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Select Batch *</label>
+            <select id="stuBatchInput" required class="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl bg-white font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500/30">
+              <option value="7:00 - 8:00 AM">7:00 - 8:00 AM</option>
+              <option value="8:00 - 9:00 AM">8:00 - 9:00 AM</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Roll No.</label>
+            <input type="text" id="stuRollInput" placeholder="e.g., 1201" class="w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500/30" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">WhatsApp Number *</label>
+            <input type="tel" id="stuPhoneInput" required placeholder="9876543210" maxlength="10" pattern="[0-9]{10}" title="10 digit WhatsApp number" class="w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500/30" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Monthly Fee (₹) *</label>
+            <input type="number" id="stuFeeInput" required value="1000" min="0" class="w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500/30" />
+          </div>
+        </div>
+
+        <div class="pt-2 flex justify-end gap-2">
+          <button type="button" onclick="closeStudentModal()" class="px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100">
+            Cancel
+          </button>
+          <button type="submit" class="tactile-btn px-5 py-2.5 rounded-xl text-xs font-bold bg-teal-600 hover:bg-teal-700 text-white shadow-md shadow-teal-600/20">
+            Save Student
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL 2: DELETE CONFIRMATION               -->
+  <!-- ========================================== -->
+  <div id="deleteModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-5 shadow-2xl border border-slate-100 text-center space-y-4 animate-pop">
+      <div class="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center mx-auto">
+        <i data-lucide="trash-2" class="w-6 h-6"></i>
+      </div>
+      <div>
+        <h3 class="font-display font-bold text-base text-slate-900">Student Delete Karein?</h3>
+        <p id="deleteModalMsg" class="text-xs text-slate-500 mt-1">Kya aap is student ka record permanently delete karna chahte hain?</p>
+      </div>
+      <div class="flex gap-2 pt-1">
+        <button onclick="closeDeleteModal()" class="flex-1 py-2.5 rounded-xl text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200">
+          Cancel
+        </button>
+        <button onclick="confirmDeleteStudent()" class="flex-1 py-2.5 rounded-xl text-xs font-bold bg-rose-600 text-white hover:bg-rose-700 shadow-md shadow-rose-500/20">
+          Haan, Delete Karein
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL 3: DUAL REPORT (TEXT + GRAPHIC PDF)  -->
+  <!-- ========================================== -->
+  <div id="reportModal" class="fixed inset-0 z-50 hidden items-center justify-center p-2.5 sm:p-4 bg-slate-900/60 backdrop-blur-sm">
+    <div class="bg-white rounded-3xl max-w-lg w-full max-h-[94vh] flex flex-col shadow-2xl border border-slate-100 overflow-hidden animate-pop">
+      
+      <div class="px-4 py-3.5 bg-slate-900 text-white flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-teal-500/20 text-teal-300 flex items-center justify-center">
+            <i data-lucide="sparkles" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h2 class="font-display font-bold text-sm sm:text-base leading-tight">Tuniefy Group Report</h2>
+            <p class="text-[11px] text-slate-300">WhatsApp Message + Mobile Graphic PDF</p>
+          </div>
+        </div>
+        <button onclick="closeReportModal()" class="p-2 rounded-xl bg-white/10 hover:bg-white/20">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="px-4 py-2.5 bg-slate-50 border-b border-slate-200/80 flex flex-wrap items-center justify-between gap-2">
+        <div class="flex items-center gap-1 bg-white p-1 rounded-xl border border-slate-200">
+          <button onclick="setReportType('ATTENDANCE')" id="repTypeAttBtn" class="px-2.5 py-1.5 rounded-lg text-xs font-bold bg-teal-600 text-white transition-all">
+            Attendance
+          </button>
+          <button onclick="setReportType('FEES')" id="repTypeFeeBtn" class="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 transition-all">
+            Fees Report
+          </button>
+        </div>
+
+        <select id="reportBatchSelect" onchange="buildReportOutputs()" class="px-2.5 py-1.5 rounded-xl text-xs font-bold bg-white border border-slate-200 text-slate-700 focus:outline-none">
+          <option value="ALL">All Batches</option>
+          <option value="7:00 - 8:00 AM">7:00 - 8:00 AM</option>
+          <option value="8:00 - 9:00 AM">8:00 - 9:00 AM</option>
+        </select>
+      </div>
+
+      <div class="px-4 pt-2 bg-white border-b border-slate-100 flex items-center gap-4 text-xs">
+        <button onclick="switchReportPreviewTab('PDF')" id="prevTabPdf" class="pb-2 font-bold text-teal-600 border-b-2 border-teal-600 flex items-center gap-1.5">
+          <i data-lucide="smartphone" class="w-3.5 h-3.5"></i>
+          <span>Mobile PDF Preview</span>
+        </button>
+        <button onclick="switchReportPreviewTab('TEXT')" id="prevTabText" class="pb-2 font-semibold text-slate-500 hover:text-slate-800 flex items-center gap-1.5">
+          <i data-lucide="message-circle" class="w-3.5 h-3.5"></i>
+          <span>WhatsApp Text</span>
+        </button>
+      </div>
+
+      <div class="p-3 sm:p-4 overflow-y-auto flex-1 bg-slate-100/80 flex justify-center">
+        <div id="pdfPreviewContainer" class="bg-white rounded-2xl shadow-md border border-slate-200/80 overflow-hidden w-full max-w-[380px] h-fit">
+          <div id="pdfCanvasWrapper" class="p-4"></div>
+        </div>
+
+        <div id="textPreviewContainer" class="hidden bg-white rounded-2xl p-4 shadow-sm border border-teal-100 w-full h-fit">
+          <div class="flex items-center justify-between mb-2 pb-2 border-b border-slate-100">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-teal-700 flex items-center gap-1">
+              <i data-lucide="message-square" class="w-3.5 h-3.5"></i>
+              WhatsApp Group Message
+            </span>
+            <button onclick="copyWhatsAppReport()" class="text-[11px] font-bold text-teal-600 hover:underline">Copy Text</button>
+          </div>
+          <pre id="whatsappTextOutput" class="whitespace-pre-wrap font-sans text-xs sm:text-sm text-slate-800 leading-relaxed select-all"></pre>
+        </div>
+      </div>
+
+      <div class="p-3.5 bg-white border-t border-slate-100 grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <button onclick="downloadGraphicPDF()" id="downloadPdfBtn" class="tactile-btn py-3 px-4 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-display font-bold text-xs shadow-lg shadow-teal-600/20 flex items-center justify-center gap-2">
+          <i data-lucide="file-down" class="w-4 h-4"></i>
+          <span>Save / Share Graphic PDF</span>
+        </button>
+        <button onclick="shareReportOnWhatsApp()" class="tactile-btn py-3 px-4 rounded-xl bg-[#25D366] hover:bg-[#1ebe5d] text-white font-display font-bold text-xs shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2">
+          <i data-lucide="send" class="w-4 h-4"></i>
+          <span>Share Text on WhatsApp</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed top-20 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 transition-all duration-300 transform -translate-y-2 max-w-[90vw]">
+    <div class="px-4 py-2.5 rounded-2xl bg-slate-900/95 text-white text-xs font-semibold shadow-xl flex items-center gap-2 backdrop-blur-md">
+      <i data-lucide="check-circle" class="w-4 h-4 text-teal-400 shrink-0"></i>
+      <span id="toastMsg">Saved!</span>
+    </div>
+  </div>
+
+  <!-- App Logic: Silent Cloud Sync + Plan Gating + Profile Modal -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAIDciHhY5fuU3DWDczVxkvipXS5jI-1_g",
+      authDomain: "tuniefy.firebaseapp.com",
+      projectId: "tuniefy",
+      storageBucket: "tuniefy.firebasestorage.app",
+      messagingSenderId: "991800434118",
+      appId: "1:991800434118:web:d25c0ad245eed0b3db26c7",
+      measurementId: "G-ETCP6548T0"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    let currentTeacher = null;
+    let cloudDocRef = null;
+    let profileDocRef = null;
+    let unsubscribeSnapshot = null;
+
+    // Plan state: 'FREE' | 'PRO_TRIAL' | 'PRO'
+    let activePlanMode = 'FREE';
+    let isSubscribed = false;
+    let trialDaysLeft = 0;
+
+    const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+    let appData = {
+      students: [],
+      attendanceByDate: {}
+    };
+
+    let currentTab = 'dashboard';
+    let selectedDate = new Date().toISOString().split('T')[0];
+    let sectionBatchFilter = {
+      attendance: 'ALL',
+      fees: 'ALL',
+      students: 'ALL'
+    };
+    let studentToDeleteId = null;
+    let currentReportType = 'ATTENDANCE';
+
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        window.location.href = 'index.html';
+        return;
+      }
+
+      currentTeacher = user;
+      profileDocRef = doc(db, "teachers", user.uid, "profile", "info");
+      cloudDocRef = doc(db, "teachers", user.uid, "portal_data", "main");
+
+      setupProfileUI(user);
+      await checkSubscriptionAndInit();
+    });
+
+    function setupProfileUI(user) {
+      const displayName = user.displayName || user.email.split('@')[0];
+      const initials = displayName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+
+      document.getElementById('profileTeacherName').textContent = displayName;
+      document.getElementById('profileTeacherEmail').textContent = user.email;
+
+      const avatarBox = document.getElementById('profileAvatarBox');
+      const headerIcon = document.getElementById('headerProfileIcon');
+
+      if (user.photoURL) {
+        avatarBox.innerHTML = `<img src="${user.photoURL}" alt="Profile" class="w-full h-full object-cover" />`;
+        headerIcon.innerHTML = `<img src="${user.photoURL}" alt="Profile" class="w-full h-full object-cover" />`;
+      } else {
+        avatarBox.textContent = initials;
+      }
+    }
+
+    async function checkSubscriptionAndInit() {
+      try {
+        const profSnap = await getDoc(profileDocRef);
+        if (profSnap.exists()) {
+          const profData = profSnap.data();
+          const now = new Date().getTime();
+          const expiry = profData.planExpiryDate ? new Date(profData.planExpiryDate).getTime() : 0;
+
+          if ((profData.planType === 'PRO' || profData.planType === 'PREMIUM') && profData.subscriptionStatus === 'ACTIVE' && now < expiry) {
+            activePlanMode = 'PRO';
+            isSubscribed = true;
+          } else if (profData.planType === 'PRO_TRIAL' && profData.subscriptionStatus === 'ACTIVE' && now < expiry) {
+            activePlanMode = 'PRO_TRIAL';
+            isSubscribed = true;
+            trialDaysLeft = Math.max(1, Math.ceil((expiry - now) / (1000 * 60 * 60 * 24)));
+          } else {
+            // Permanent FREE plan OR expired Pro/Trial falls back cleanly to FREE plan
+            activePlanMode = 'FREE';
+            isSubscribed = false;
+          }
+        } else {
+          window.location.href = 'index.html';
+          return;
+        }
+      } catch (err) {
+        console.error("Subscription Check Error:", err);
+        activePlanMode = 'FREE';
+        isSubscribed = false;
+      }
+
+      updatePlanUI();
+      document.getElementById('authGateLoader').classList.add('hidden');
+
+      // Silent Cloud Sync runs for BOTH Free and Pro users!
+      initCloudListener();
+
+      // Show Local Storage notice popup once per session for Free users
+      if (!isSubscribed && !sessionStorage.getItem('tuniefy_free_notice_shown')) {
+        sessionStorage.setItem('tuniefy_free_notice_shown', '1');
+        triggerSubGate("Abhi aapka data <strong>Local Storage</strong> par save ho raha hai (device reset ya app delete hone par data hat sakta hai). Permanent Cloud Sync aur Pro features ke liye Tuniefy Pro lein.");
+      }
+    }
+
+    function updatePlanUI() {
+      const badge = document.getElementById('planStatusBadge');
+      const freeBanner = document.getElementById('freePlanBanner');
+      const trialBanner = document.getElementById('trialPlanBanner');
+      const storageTitle = document.getElementById('storageTitle');
+      const storageSubtitle = document.getElementById('storageSubtitle');
+      const profilePill = document.getElementById('profilePlanPill');
+      const profileDesc = document.getElementById('profilePlanDesc');
+      const profileUpgradeWrap = document.getElementById('profileUpgradeWrap');
+
+      if (activePlanMode === 'PRO') {
+        badge.textContent = 'PRO';
+        badge.className = 'px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-teal-600 text-white shrink-0';
+        badge.onclick = () => openProfileModal();
+        freeBanner.classList.add('hidden');
+        trialBanner.classList.add('hidden');
+        storageTitle.textContent = 'Permanent Cloud Sync Active';
+        storageSubtitle.textContent = 'Aapka saara data cloud par surakshit hai. Extra safety ke liye JSON export karein.';
+        profilePill.textContent = 'PRO UNLIMITED';
+        profilePill.className = 'px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-teal-100 text-teal-800';
+        profileDesc.textContent = 'Permanent Cloud Sync, PDF Reports aur WhatsApp Alerts active hain.';
+        profileUpgradeWrap.classList.add('hidden');
+      } else if (activePlanMode === 'PRO_TRIAL') {
+        badge.textContent = `TRIAL • ${trialDaysLeft}D`;
+        badge.className = 'px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-teal-100 text-teal-800 border border-teal-200 shrink-0';
+        badge.onclick = () => openProfileModal();
+        freeBanner.classList.add('hidden');
+        trialBanner.classList.remove('hidden');
+        document.getElementById('trialBannerTitle').textContent = `Pro Free Trial Active (${trialDaysLeft} din baki)`;
+        storageTitle.textContent = 'Cloud Sync Active (Pro Trial)';
+        storageSubtitle.textContent = `${trialDaysLeft} din baad trial khatam hoga. Continuity ke liye Pro plan activate karein.`;
+        profilePill.textContent = `PRO TRIAL (${trialDaysLeft}D LEFT)`;
+        profilePill.className = 'px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-teal-100 text-teal-800';
+        profileDesc.textContent = `Aapka 7-day Pro Trial chal raha hai (${trialDaysLeft} din baki hain).`;
+        profileUpgradeWrap.classList.remove('hidden');
+      } else {
+        badge.textContent = 'FREE • LOCAL';
+        badge.className = 'px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-amber-100 text-amber-800 border border-amber-200 shrink-0 cursor-pointer';
+        badge.onclick = () => triggerSubGate();
+        freeBanner.classList.remove('hidden');
+        trialBanner.classList.add('hidden');
+        storageTitle.textContent = 'Local Device Storage (Free Plan)';
+        storageSubtitle.textContent = 'Data abhi local storage mein hai. Cloud sync ke liye Pro mein upgrade karein.';
+        profilePill.textContent = 'FREE PLAN (₹0)';
+        profilePill.className = 'px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-800';
+        profileDesc.textContent = 'Free Plan active hai (Local Storage mode). PDF aur WhatsApp ke liye Pro lein.';
+        profileUpgradeWrap.classList.remove('hidden');
+      }
+      lucide.createIcons();
+    }
+
+    window.openProfileModal = function() {
+      const modal = document.getElementById('profileModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      lucide.createIcons();
+    };
+
+    window.closeProfileModal = function() {
+      const modal = document.getElementById('profileModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    };
+
+    window.triggerSubGate = function(customMsg = null) {
+      if (customMsg) {
+        document.getElementById('subGateMessage').innerHTML = customMsg;
+      }
+      const modal = document.getElementById('subGateOverlay');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      lucide.createIcons();
+    };
+
+    window.closeSubGate = function() {
+      const modal = document.getElementById('subGateOverlay');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    };
+
+    window.handleLogout = async function() {
+      try {
+        if (unsubscribeSnapshot) unsubscribeSnapshot();
+        await signOut(auth);
+        window.location.href = 'index.html';
+      } catch (err) {
+        showToast('Logout karne mein dikkat aayi.');
+      }
+    };
+
+    // Silently saves to Firebase Cloud for BOTH Free and Pro users
+    async function saveAppData(actionLabel = "Updating Data") {
+      if (!cloudDocRef || !currentTeacher) return;
+
+      try {
+        await setDoc(cloudDocRef, {
+          teacherId: currentTeacher.uid,
+          teacherEmail: currentTeacher.email,
+          teacherName: currentTeacher.displayName || currentTeacher.email.split('@')[0],
+          students: appData.students,
+          attendanceByDate: appData.attendanceByDate,
+          updatedAt: new Date().toISOString()
+        }, { merge: true });
+      } catch (err) {
+        console.error("Cloud Write Error:", err);
+      }
+    }
+
+    function initCloudListener() {
+      if (!cloudDocRef) return;
+      if (unsubscribeSnapshot) unsubscribeSnapshot();
+
+      unsubscribeSnapshot = onSnapshot(cloudDocRef, (snapshot) => {
+        if (snapshot.exists()) {
+          const cloudData = snapshot.data();
+          appData.students = Array.isArray(cloudData.students) ? cloudData.students : [];
+          appData.attendanceByDate = cloudData.attendanceByDate || {};
+        } else {
+          appData.students = [];
+          appData.attendanceByDate = {};
+        }
+        refreshAllViews();
+      });
+    }
+
+    window.saveOrShareFileUniversal = async function(blob, fileName, mimeType) {
+      try {
+        const file = new File([blob], fileName, { type: mimeType });
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            files: [file],
+            title: fileName,
+            text: 'Tuniefy — Teacher Report'
+          });
+          return;
+        }
+      } catch (err) {
+        if (err && err.name === 'AbortError') return;
+      }
+
+      const reader = new FileReader();
+      reader.onloadend = function () {
+        const a = document.createElement('a');
+        a.href = reader.result;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        showToast(`${fileName} downloaded!`);
+      };
+      reader.readAsDataURL(blob);
+    };
+
+    // Daily Attendance Logic (Saves all old dates for both Free & Pro)
+    window.setStudentAttendance = function(studentId, presentStatus) {
+      if (!appData.attendanceByDate[selectedDate]) appData.attendanceByDate[selectedDate] = {};
+      appData.attendanceByDate[selectedDate][studentId] = presentStatus;
+      refreshAllViews();
+      saveAppData(`Attendance Marked (${presentStatus ? 'Present' : 'Absent'})`);
+    };
+
+    window.markAllFilteredPresent = function() {
+      const list = getFilteredStudentsForSection('attendance');
+      if (list.length === 0) return;
+      if (!appData.attendanceByDate[selectedDate]) appData.attendanceByDate[selectedDate] = {};
+      list.forEach(s => { appData.attendanceByDate[selectedDate][s.id] = true; });
+      refreshAllViews();
+      saveAppData(`Marked All (${list.length}) Present`);
+      showToast(`${list.length} students Present marked!`);
+    };
+
+    window.handleDateChange = function() {
+      const input = document.getElementById('attendanceDateInput');
+      if (input.value) {
+        selectedDate = input.value;
+        refreshAllViews();
+      }
+    };
+
+    function formatDisplayDate(dateStr) {
+      return new Date(dateStr + 'T00:00:00').toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+    }
+
+    function isStudentPresentOnDate(studentId, dateStr = selectedDate) {
+      return (appData.attendanceByDate[dateStr] && typeof appData.attendanceByDate[dateStr][studentId] !== 'undefined') ? appData.attendanceByDate[dateStr][studentId] : true;
+    }
+
+    window.switchTab = function(tabName) {
+      currentTab = tabName;
+      document.querySelectorAll('.app-section').forEach(sec => sec.classList.add('hidden'));
+      document.getElementById(`section-${tabName}`).classList.remove('hidden');
+      document.querySelectorAll('.nav-tab').forEach(btn => {
+        const isTarget = btn.getAttribute('data-tab') === tabName;
+        btn.className = `nav-tab flex flex-col items-center justify-center py-1.5 px-2 rounded-2xl ${isTarget ? 'text-teal-700 bg-teal-50/95 font-bold' : 'text-slate-500 hover:text-slate-900 font-semibold'} transition-all`;
+      });
+      refreshAllViews();
+    };
+
+    window.setSectionBatch = function(section, batchVal) {
+      sectionBatchFilter[section] = batchVal;
+      const map = { attendance: '.att-batch-btn', fees: '.fee-batch-btn', students: '.stu-batch-btn' };
+      document.querySelectorAll(map[section]).forEach(btn => {
+        const isSel = btn.getAttribute('data-b') === batchVal;
+        btn.className = `${map[section].slice(1)} px-3 py-1.5 rounded-xl text-xs font-bold ${isSel ? 'bg-slate-900 text-white' : btn.getAttribute('data-b') === 'DUE_ONLY' ? 'bg-rose-50 text-rose-600 font-semibold' : 'bg-slate-100 text-slate-600 font-semibold'} whitespace-nowrap`;
+      });
+      if (section === 'attendance') renderAttendanceList();
+      if (section === 'fees') renderFeesList();
+      if (section === 'students') renderStudentsDirectory();
+    };
+
+    function getFilteredStudentsForSection(section) {
+      const batch = sectionBatchFilter[section];
+      const query = (document.getElementById(section === 'attendance' ? 'attSearchInput' : section === 'fees' ? 'feeSearchInput' : 'stuSearchInput')?.value || '').trim().toLowerCase();
+      return appData.students.filter(s => {
+        const mBatch = batch === 'ALL' ? true : batch === 'DUE_ONLY' ? (s.pendingMonths && s.pendingMonths.length > 0) : s.batch === batch;
+        const mQuery = !query || s.name.toLowerCase().includes(query) || (s.roll && s.roll.toLowerCase().includes(query)) || (s.phone && s.phone.includes(query));
+        return mBatch && mQuery;
+      });
+    }
+
+    function renderDashboard() {
+      const all = appData.students;
+      const total = all.length;
+      const present = all.filter(s => isStudentPresentOnDate(s.id)).length;
+      const absent = total - present;
+      const feeDue = all.filter(s => (s.pendingMonths || []).length > 0).length;
+      const pct = total > 0 ? Math.round((present / total) * 100) : 0;
+
+      document.getElementById('dashTotal').textContent = total;
+      document.getElementById('dashPresent').textContent = present;
+      document.getElementById('dashPresentPct').textContent = `${pct}%`;
+      document.getElementById('dashAbsent').textContent = absent;
+      document.getElementById('dashFeeDue').textContent = feeDue;
+
+      const b1 = all.filter(s => s.batch === '7:00 - 8:00 AM');
+      const b1Pres = b1.filter(s => isStudentPresentOnDate(s.id)).length;
+      document.getElementById('b1TotalBadge').textContent = `${b1.length} Students`;
+      document.getElementById('b1Present').textContent = b1Pres;
+      document.getElementById('b1Absent').textContent = b1.length - b1Pres;
+      document.getElementById('b1Due').textContent = b1.filter(s => (s.pendingMonths || []).length > 0).length;
+
+      const b2 = all.filter(s => s.batch === '8:00 - 9:00 AM');
+      const b2Pres = b2.filter(s => isStudentPresentOnDate(s.id)).length;
+      document.getElementById('b2TotalBadge').textContent = `${b2.length} Students`;
+      document.getElementById('b2Present').textContent = b2Pres;
+      document.getElementById('b2Absent').textContent = b2.length - b2Pres;
+      document.getElementById('b2Due').textContent = b2.filter(s => (s.pendingMonths || []).length > 0).length;
+    }
+
+    window.renderAttendanceList = function() {
+      const container = document.getElementById('attendanceListContainer');
+      const list = getFilteredStudentsForSection('attendance');
+
+      if (appData.students.length === 0) {
+        container.innerHTML = getEmptyStateHTML('Abhi koi student add nahi hai', 'Pehle apne students add karein phir attendance lein.');
+        lucide.createIcons();
+        return;
+      }
+
+      if (list.length === 0) {
+        container.innerHTML = getEmptyStateHTML('Koi student nahi mila', 'Batch filter ya search query change karein.', false);
+        lucide.createIcons();
+        return;
+      }
+
+      container.innerHTML = list.map((s, idx) => {
+        const present = isStudentPresentOnDate(s.id);
+        const batchBadgeColor = s.batch === '7:00 - 8:00 AM' ? 'bg-teal-50 text-teal-700 border-teal-100' : 'bg-emerald-50 text-emerald-700 border-emerald-100';
+
+        return `
+          <div class="glass-card rounded-2xl px-3.5 py-2.5 flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2.5 min-w-0">
+              <span class="w-7 h-7 rounded-xl bg-slate-100 text-slate-600 font-display font-bold text-xs flex items-center justify-center shrink-0">
+                ${s.roll || idx + 1}
+              </span>
+              <div class="min-w-0">
+                <h4 class="font-display font-bold text-sm text-slate-900 truncate">${s.name}</h4>
+                <span class="inline-block text-[10px] font-bold px-2 py-0.5 rounded-md border ${batchBadgeColor}">${s.batch}</span>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2 shrink-0">
+              <button onclick="messageStudentWhatsApp(${s.id}, 'ATTENDANCE')" title="WhatsApp ${s.name}" class="tactile-btn w-9 h-9 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border border-emerald-200/70 flex items-center justify-center">
+                <i data-lucide="message-circle" class="w-4 h-4"></i>
+              </button>
+
+              <div class="inline-flex p-1 rounded-xl bg-slate-100 border border-slate-200/70">
+                <button onclick="setStudentAttendance(${s.id}, true)" class="tactile-btn px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold ${present ? 'bg-teal-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'}">Present</button>
+                <button onclick="setStudentAttendance(${s.id}, false)" class="tactile-btn px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold ${!present ? 'bg-rose-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'}">Absent</button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+      lucide.createIcons();
+    };
+
+    window.renderFeesList = function() {
+      const container = document.getElementById('feesListContainer');
+      const list = getFilteredStudentsForSection('fees');
+
+      if (appData.students.length === 0) {
+        container.innerHTML = getEmptyStateHTML('Fees list khali hai', 'Student add karne ke baad aap har mahine ki fees manage kar sakte hain.');
+        lucide.createIcons();
+        return;
+      }
+
+      container.innerHTML = list.map(s => {
+        const pending = s.pendingMonths || [];
+        const totalDueAmt = pending.length * (s.feeAmount || 0);
+
+        return `
+          <div class="glass-card rounded-2xl p-4 space-y-3">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <div class="flex items-center gap-2">
+                  <span class="text-[11px] font-bold px-2 py-0.5 rounded-md bg-slate-100 text-slate-600">#${s.roll || '-'}</span>
+                  <h4 class="font-display font-bold text-sm sm:text-base text-slate-900">${s.name}</h4>
+                  <span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-teal-50 text-teal-700">${s.batch}</span>
+                </div>
+                <p class="text-xs text-slate-500 mt-0.5">
+                  Monthly Fee: <strong class="text-slate-800">₹${s.feeAmount}</strong> •
+                  ${pending.length > 0 ? `<span class="text-rose-600 font-bold">Baki: ${pending.join(', ')} (₹${totalDueAmt})</span>` : `<span class="text-teal-600 font-bold">All Clear ✨</span>`}
+                </p>
+              </div>
+
+              <button onclick="messageStudentWhatsApp(${s.id}, 'FEES')" class="tactile-btn px-3 py-1.5 rounded-xl bg-[#25D366]/15 hover:bg-[#25D366]/25 text-emerald-800 border border-emerald-300/60 text-xs font-bold flex items-center gap-1.5">
+                <i data-lucide="message-circle" class="w-3.5 h-3.5 text-emerald-600"></i>
+                <span>WhatsApp Fee Info</span>
+              </button>
+            </div>
+
+            <div class="grid grid-cols-6 sm:grid-cols-12 gap-1.5 pt-1">
+              ${MONTHS.map(m => {
+                const isPaid = (s.paidMonths || []).includes(m);
+                const isDue = (s.pendingMonths || []).includes(m);
+                return `
+                  <button onclick="cycleStudentMonthFee(${s.id}, '${m}')" class="tactile-btn py-1.5 px-1 rounded-xl border text-center transition-all ${isPaid ? 'bg-teal-600 border-teal-700 text-white shadow-sm' : isDue ? 'bg-rose-500 border-rose-600 text-white shadow-sm' : 'bg-slate-50 border-slate-200 text-slate-500'}">
+                    <div class="text-[10px] font-bold leading-tight">${m}</div>
+                    <div class="text-[9px] font-extrabold mt-0.5">${isPaid ? 'Jama' : isDue ? 'Baki' : '-'}</div>
+                  </button>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        `;
+      }).join('');
+      lucide.createIcons();
+    };
+
+    window.cycleStudentMonthFee = function(studentId, month) {
+      const student = appData.students.find(s => s.id === studentId);
+      if (!student) return;
+      student.paidMonths = student.paidMonths || [];
+      student.pendingMonths = student.pendingMonths || [];
+      const isPaid = student.paidMonths.includes(month);
+      const isDue = student.pendingMonths.includes(month);
+
+      if (!isPaid && !isDue) student.paidMonths.push(month);
+      else if (isPaid) { student.paidMonths = student.paidMonths.filter(m => m !== month); student.pendingMonths.push(month); }
+      else student.pendingMonths = student.pendingMonths.filter(m => m !== month);
+
+      student.paidMonths.sort((a, b) => MONTHS.indexOf(a) - MONTHS.indexOf(b));
+      student.pendingMonths.sort((a, b) => MONTHS.indexOf(a) - MONTHS.indexOf(b));
+
+      refreshAllViews();
+      saveAppData(`Fee Updated (${student.name} - ${month})`);
+    };
+
+    window.renderStudentsDirectory = function() {
+      const container = document.getElementById('studentsDirectoryContainer');
+      const list = getFilteredStudentsForSection('students');
+
+      if (appData.students.length === 0) {
+        container.innerHTML = `<div class="sm:col-span-2">${getEmptyStateHTML('Abhi 0 students hain', 'Upar "+ Add New Student" button par click karke apne students add karein.')}</div>`;
+        lucide.createIcons();
+        return;
+      }
+
+      container.innerHTML = list.map(s => {
+        const initials = s.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+        return `
+          <div class="glass-card rounded-2xl p-4 flex flex-col justify-between gap-3">
+            <div class="flex items-start justify-between gap-2">
+              <div class="flex items-center gap-3 min-w-0">
+                <div class="w-11 h-11 rounded-2xl bg-teal-600 text-white font-display font-extrabold text-sm flex items-center justify-center shrink-0">
+                  ${initials}
+                </div>
+                <div class="min-w-0">
+                  <div class="flex items-center gap-1.5">
+                    <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">#${s.roll || '-'}</span>
+                    <h4 class="font-display font-bold text-sm text-slate-900 truncate">${s.name}</h4>
+                  </div>
+                  <div class="flex flex-wrap items-center gap-1.5 mt-1">
+                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-teal-50 text-teal-700">${s.batch}</span>
+                    <span class="text-[11px] font-medium text-slate-500 flex items-center gap-1"><i data-lucide="phone" class="w-3 h-3"></i>${s.phone}</span>
+                  </div>
+                </div>
+              </div>
+              <span class="text-xs font-extrabold text-slate-800 bg-slate-100 px-2.5 py-1 rounded-xl shrink-0">₹${s.feeAmount}/m</span>
+            </div>
+
+            <div class="pt-2.5 border-t border-slate-100 flex items-center justify-between gap-2">
+              <button onclick="messageStudentWhatsApp(${s.id}, 'GENERAL')" class="tactile-btn flex-1 py-2 px-3 rounded-xl bg-[#25D366] hover:bg-[#1ebe5d] text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm">
+                <i data-lucide="message-circle" class="w-3.5 h-3.5"></i><span>WhatsApp</span>
+              </button>
+              <button onclick="openStudentModal(${s.id})" class="tactile-btn py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold flex items-center gap-1">
+                <i data-lucide="edit-3" class="w-3.5 h-3.5"></i><span>Edit</span>
+              </button>
+              <button onclick="promptDeleteStudent(${s.id})" class="tactile-btn py-2 px-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold flex items-center justify-center"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+            </div>
+          </div>
+        `;
+      }).join('');
+      lucide.createIcons();
+    };
+
+    function getEmptyStateHTML(title, subtitle, showAddBtn = true) {
+      return `<div class="glass-card rounded-3xl p-8 text-center space-y-3"><div class="w-12 h-12 rounded-2xl bg-teal-50 text-teal-600 flex items-center justify-center mx-auto"><i data-lucide="user-plus" class="w-6 h-6"></i></div><div><h3 class="font-display font-bold text-base text-slate-900">${title}</h3><p class="text-xs text-slate-500 mt-1 max-w-sm mx-auto">${subtitle}</p></div>${showAddBtn ? `<button onclick="openStudentModal()" class="tactile-btn inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold"><i data-lucide="plus" class="w-4 h-4"></i><span>+ Add First Student</span></button>` : ''}</div>`;
+    }
+
+    // WhatsApp Button Action: Triggers Pro Upgrade Popup on Free Plan
+    window.messageStudentWhatsApp = function(studentId, contextType) {
+      if (!isSubscribed) {
+        triggerSubGate("Free Plan mein <strong>WhatsApp Alerts</strong> locked hain. Parents ko direct attendance aur fees alert bhejne ke liye Tuniefy Pro lein.");
+        return;
+      }
+
+      const s = appData.students.find(st => st.id === studentId);
+      if (!s || !s.phone) return;
+
+      const cleanPhone = s.phone.replace(/\D/g, '');
+      const fullPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
+      const coachingName = (currentTeacher && currentTeacher.displayName) ? currentTeacher.displayName : 'Tuniefy Coaching';
+
+      let msg = '';
+      if (contextType === 'ATTENDANCE') {
+        const present = isStudentPresentOnDate(s.id);
+        msg = present
+          ? `Namaste *${s.name}*,\nAaj (${formatDisplayDate(selectedDate)}) aap *${coachingName} (${s.batch})* mein *PRESENT* hain. ✅`
+          : `Namaste *${s.name}*,\nAaj (${formatDisplayDate(selectedDate)}) aap *${coachingName} (${s.batch})* ki class mein *ABSENT* the. ❌`;
+      } else if (contextType === 'FEES') {
+        const paidStr = (s.paidMonths || []).join(', ') || 'None';
+        const pendingStr = (s.pendingMonths || []).join(', ') || 'None';
+        const dueAmt = (s.pendingMonths || []).length * (s.feeAmount || 0);
+        msg = `📚 *${coachingName}*\nStudent: *${s.name}* (${s.batch})\n\n✅ Fees Jama: *${paidStr}*\n🔴 Fees Baki: *${pendingStr}* ${dueAmt > 0 ? `(Total ₹${dueAmt})` : ''}\n\nKripya baki fees jald jama karein.`;
+      } else {
+        msg = `Namaste *${s.name}* (${s.batch}),\n*${coachingName}* se message: `;
+      }
+
+      window.open(`https://wa.me/${fullPhone}?text=${encodeURIComponent(msg)}`, '_blank');
+    };
+
+    window.openStudentModal = function(studentId = null) {
+      const modal = document.getElementById('studentModal');
+      const titleEl = document.getElementById('studentModalTitle');
+      const idInput = document.getElementById('editStudentId');
+
+      if (studentId) {
+        const s = appData.students.find(st => st.id === studentId);
+        if (!s) return;
+        titleEl.textContent = 'Edit Student Details';
+        idInput.value = s.id;
+        document.getElementById('stuNameInput').value = s.name;
+        document.getElementById('stuBatchInput').value = s.batch;
+        document.getElementById('stuRollInput').value = s.roll || '';
+        document.getElementById('stuPhoneInput').value = s.phone || '';
+        document.getElementById('stuFeeInput').value = s.feeAmount || 1000;
+      } else {
+        titleEl.textContent = 'Add New Student';
+        idInput.value = '';
+        document.getElementById('stuNameInput').value = '';
+        document.getElementById('stuBatchInput').value = '7:00 - 8:00 AM';
+        document.getElementById('stuRollInput').value = (appData.students.length + 1).toString();
+        document.getElementById('stuPhoneInput').value = '';
+        document.getElementById('stuFeeInput').value = '1000';
+      }
+      modal.classList.remove('hidden'); modal.classList.add('flex'); lucide.createIcons();
+    };
+
+    window.closeStudentModal = function() {
+      const modal = document.getElementById('studentModal');
+      modal.classList.add('hidden'); modal.classList.remove('flex');
+    };
+
+    window.saveStudentForm = function(e) {
+      e.preventDefault();
+      const editId = document.getElementById('editStudentId').value;
+      const name = document.getElementById('stuNameInput').value.trim();
+      const batch = document.getElementById('stuBatchInput').value;
+      const roll = document.getElementById('stuRollInput').value.trim() || (appData.students.length + 1).toString();
+      const phone = document.getElementById('stuPhoneInput').value.trim();
+      const feeAmount = parseInt(document.getElementById('stuFeeInput').value, 10) || 1000;
+
+      if (!name || !phone) return;
+
+      if (editId) {
+        const idx = appData.students.findIndex(s => s.id == editId);
+        appData.students[idx] = { ...appData.students[idx], teacherId: currentTeacher ? currentTeacher.uid : '', name, batch, roll, phone, feeAmount };
+        saveAppData(`Edited Student: ${name}`);
+        showToast(`${name} updated!`);
+      } else {
+        appData.students.push({ id: Date.now(), teacherId: currentTeacher ? currentTeacher.uid : '', name, batch, roll, phone, feeAmount, paidMonths: [], pendingMonths: [] });
+        saveAppData(`Added New Student: ${name}`);
+        showToast(`${name} added!`);
+      }
+      closeStudentModal(); refreshAllViews();
+    };
+
+    window.promptDeleteStudent = function(studentId) {
+      const s = appData.students.find(st => st.id === studentId);
+      if (!s) return;
+      studentToDeleteId = studentId;
+      document.getElementById('deleteModalMsg').textContent = `Kya aap "${s.name}" ko delete karna chahte hain?`;
+      document.getElementById('deleteModal').classList.remove('hidden'); document.getElementById('deleteModal').classList.add('flex'); lucide.createIcons();
+    };
+
+    window.closeDeleteModal = function() {
+      document.getElementById('deleteModal').classList.add('hidden');
+      document.getElementById('deleteModal').classList.remove('flex');
+    };
+
+    window.confirmDeleteStudent = function() {
+      if (!studentToDeleteId) return;
+      appData.students = appData.students.filter(s => s.id !== studentToDeleteId);
+      saveAppData(`Deleted Student ID: ${studentToDeleteId}`);
+      closeDeleteModal(); refreshAllViews(); showToast('Student deleted.');
+    };
+
+    // PDF & Group Reports Action: Triggers Pro Upgrade Popup on Free Plan
+    window.openReportModal = function(type = 'ATTENDANCE') {
+      if (!isSubscribed) {
+        triggerSubGate("<strong>PDF Reports aur Group Summaries</strong> keval Tuniefy Pro mein uplabdh hain. Report download karne ke liye plan upgrade karein.");
+        return;
+      }
+      if (appData.students.length === 0) { showToast('Pehle students add karein!'); return; }
+      currentReportType = type; setReportType(type); switchReportPreviewTab('PDF');
+      document.getElementById('reportModal').classList.remove('hidden');
+      document.getElementById('reportModal').classList.add('flex');
+      lucide.createIcons();
+    };
+
+    window.closeReportModal = function() {
+      document.getElementById('reportModal').classList.add('hidden');
+      document.getElementById('reportModal').classList.remove('flex');
+    };
+
+    window.setReportType = function(type) {
+      currentReportType = type;
+      document.getElementById('repTypeAttBtn').className = `px-2.5 py-1.5 rounded-lg text-xs font-bold ${type === 'ATTENDANCE' ? 'bg-teal-600 text-white' : 'text-slate-600 hover:text-slate-900'} transition-all`;
+      document.getElementById('repTypeFeeBtn').className = `px-2.5 py-1.5 rounded-lg text-xs font-bold ${type === 'FEES' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900'} transition-all`;
+      buildReportOutputs();
+    };
+
+    window.switchReportPreviewTab = function(view) {
+      const isPdf = view === 'PDF';
+      document.getElementById('pdfPreviewContainer').classList.toggle('hidden', !isPdf);
+      document.getElementById('textPreviewContainer').classList.toggle('hidden', isPdf);
+      document.getElementById('prevTabPdf').className = `pb-2 font-bold ${isPdf ? 'text-teal-600 border-b-2 border-teal-600' : 'text-slate-500'} flex items-center gap-1.5`;
+      document.getElementById('prevTabText').className = `pb-2 font-bold ${!isPdf ? 'text-teal-600 border-b-2 border-teal-600' : 'text-slate-500'} flex items-center gap-1.5`;
+    };
+
+    window.buildReportOutputs = function() {
+      const batchFilter = document.getElementById('reportBatchSelect').value;
+      const list = appData.students.filter(s => batchFilter === 'ALL' ? true : s.batch === batchFilter);
+      const coachingName = (currentTeacher && currentTeacher.displayName) ? currentTeacher.displayName.toUpperCase() : 'TUNIEFY COACHING';
+      
+      if (currentReportType === 'ATTENDANCE') buildAttendanceReport(list, formatDisplayDate(selectedDate), batchFilter === 'ALL' ? 'All Batches' : batchFilter, coachingName);
+      else buildFeesReport(list, formatDisplayDate(selectedDate), batchFilter === 'ALL' ? 'All Batches' : batchFilter, coachingName);
+    };
+
+    function buildAttendanceReport(list, dateFormatted, batchLabel, coachingName) {
+      const presentList = list.filter(s => isStudentPresentOnDate(s.id));
+      const absentList = list.filter(s => !isStudentPresentOnDate(s.id));
+      const total = list.length;
+      const presPct = total > 0 ? Math.round((presentList.length / total) * 100) : 0;
+
+      document.getElementById('whatsappTextOutput').textContent =
+      `🎓 *${coachingName}*\n📋 *ATTENDANCE REPORT*\n📅 *Date:* ${dateFormatted}\n\n• Total: *${total}* | Present: *${presentList.length}* (${presPct}%) ✅\n\n✅ *Present:* ${presentList.map(s => s.name).join(', ') || 'None'}\n❌ *Absent:* ${absentList.map(s => s.name).join(', ') || 'None'}\n\n_Powered by Tuniefy_`;
+
+      document.getElementById('pdfCanvasWrapper').innerHTML = `
+        <div style="background: #0d9488; border-radius: 14px; padding: 14px 16px; color: white;">
+          <h1 style="font-size: 18px; font-weight: 800; margin: 0;">${coachingName}</h1>
+          <div style="font-size: 11px; opacity: 0.9;">ATTENDANCE REPORT • ${dateFormatted}</div>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px;">
+          <div style="background: #f8fafc; padding: 10px; text-align: center; border-radius: 12px;"><div>Total</div><div style="font-size: 18px; font-weight: 800;">${total}</div></div>
+          <div style="background: #f0fdfa; padding: 10px; text-align: center; border-radius: 12px; color: #0f766e;"><div>Present</div><div style="font-size: 18px; font-weight: 800;">${presentList.length}</div></div>
+          <div style="background: #fff1f2; padding: 10px; text-align: center; border-radius: 12px; color: #9f1239;"><div>Absent</div><div style="font-size: 18px; font-weight: 800;">${absentList.length}</div></div>
+        </div>
+        <table style="width: 100%; margin-top: 15px; border-collapse: collapse; font-size: 11px;">
+          <thead><tr style="background: #0f172a; color: white;"><th style="padding: 6px; text-align: left;">Student</th><th style="padding: 6px; text-align: left;">Batch</th><th style="padding: 6px; text-align: right;">Status</th></tr></thead>
+          <tbody>
+            ${list.map((s) => {
+              const isP = isStudentPresentOnDate(s.id);
+              return `<tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 8px;">${s.name}</td><td style="padding: 8px;">${s.batch}</td><td style="padding: 8px; text-align: right;"><span style="padding: 2px 8px; border-radius: 10px; font-weight: 700; ${isP ? 'background: #f0fdfa; color: #0f766e;' : 'background: #fff1f2; color: #9f1239;'}">${isP ? 'PRESENT' : 'ABSENT'}</span></td></tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+        <div style="margin-top: 12px; text-align: center; font-size: 10px; color: #64748b;">Generated with Tuniefy</div>
+      `;
+    }
+
+    function buildFeesReport(list, dateFormatted, batchLabel, coachingName) {
+      const clearList = list.filter(s => (s.pendingMonths || []).length === 0);
+      const dueList = list.filter(s => (s.pendingMonths || []).length > 0);
+      const total = list.length;
+      const totalPendingRupees = dueList.reduce((acc, s) => acc + ((s.pendingMonths || []).length * (s.feeAmount || 0)), 0);
+
+      document.getElementById('whatsappTextOutput').textContent =
+      `🎓 *${coachingName}*\n💰 *FEES STATUS REPORT*\n\n• Total Students: *${total}*\n• Fees Clear: *${clearList.length}* ✅\n• Fees Baki: *${dueList.length}* 🔴 (Total Due: ₹${totalPendingRupees})\n\n🔴 *Baki Students:* \n${dueList.map(s => `• ${s.name}: ${s.pendingMonths.join(', ')} (₹${s.pendingMonths.length * s.feeAmount})`).join('\n') || 'None'}\n\n_Powered by Tuniefy_`;
+
+      document.getElementById('pdfCanvasWrapper').innerHTML = `
+        <div style="background: #0f172a; border-radius: 14px; padding: 14px 16px; color: white;">
+          <h1 style="font-size: 18px; font-weight: 800; margin: 0;">${coachingName}</h1>
+          <div style="font-size: 11px; opacity: 0.9;">FEES REGISTER REPORT • ${dateFormatted}</div>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px;">
+          <div style="background: #f0fdfa; padding: 10px; text-align: center; border-radius: 12px; color: #0d9488;"><div>Clear</div><div style="font-size: 18px; font-weight: 800;">${clearList.length}</div></div>
+          <div style="background: #fff1f2; padding: 10px; text-align: center; border-radius: 12px; color: #e11d48;"><div>Baki</div><div style="font-size: 18px; font-weight: 800;">${dueList.length}</div></div>
+          <div style="background: #fffbeb; padding: 10px; text-align: center; border-radius: 12px; color: #d97706;"><div>Total Due</div><div style="font-weight: 800;">₹${totalPendingRupees}</div></div>
+        </div>
+        <table style="width: 100%; margin-top: 15px; border-collapse: collapse; font-size: 11px;">
+          <thead><tr style="background: #0f172a; color: white;"><th style="padding: 6px; text-align: left;">Student</th><th style="padding: 6px; text-align: left;">Jama</th><th style="padding: 6px; text-align: right;">Baki</th></tr></thead>
+          <tbody>
+            ${list.map(s => {
+              const due = s.pendingMonths || [];
+              const dueAmt = due.length * (s.feeAmount || 0);
+              return `<tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 8px;">${s.name}</td><td style="padding: 8px; color: #0d9488; font-weight: 700;">${(s.paidMonths || []).join(', ') || '-'}</td><td style="padding: 8px; text-align: right;"><span style="padding: 2px 6px; border-radius: 6px; font-weight: 700; ${due.length > 0 ? 'background: #fff1f2; color: #9f1239;' : 'background: #ccfbf1; color: #0f766e;'}">${due.length > 0 ? `${due.join(', ')} (₹${dueAmt})` : 'CLEAR'}</span></td></tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+        <div style="margin-top: 12px; text-align: center; font-size: 10px; color: #64748b;">Generated with Tuniefy</div>
+      `;
+    }
+
+    window.downloadGraphicPDF = async function() {
+      const element = document.getElementById('pdfCanvasWrapper');
+      const btn = document.getElementById('downloadPdfBtn');
+      const originalHTML = btn.innerHTML;
+      btn.innerHTML = '<span>Generating PDF...</span>';
+
+      const fileName = currentReportType === 'ATTENDANCE' ? `Tuniefy_Attendance_${selectedDate}.pdf` : `Tuniefy_Fees_Report_${selectedDate}.pdf`;
+      const opt = {
+        margin: [0.25, 0.25, 0.25, 0.25],
+        filename: fileName,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2.5, useCORS: true, windowWidth: 420 },
+        jsPDF: { unit: 'mm', format: [110, 195], orientation: 'portrait' }
+      };
+
+      try {
+        const pdfBlob = await html2pdf().set(opt).from(element).outputPdf('blob');
+        await saveOrShareFileUniversal(pdfBlob, fileName, 'application/pdf');
+      } catch (err) {
+        showToast('PDF banane mein error aaya.');
+      } finally {
+        btn.innerHTML = originalHTML; lucide.createIcons();
+      }
+    };
+
+    window.shareReportOnWhatsApp = function() {
+      const text = document.getElementById('whatsappTextOutput').textContent;
+      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+    };
+
+    window.copyWhatsAppReport = function() {
+      navigator.clipboard.writeText(document.getElementById('whatsappTextOutput').textContent).then(() => showToast('Report copied!'));
+    };
+
+    window.exportBackupJSON = async function() {
+      const blob = new Blob([JSON.stringify(appData, null, 2)], { type: 'application/json' });
+      await saveOrShareFileUniversal(blob, `Tuniefy_Backup_${selectedDate}.json`, 'application/json');
+    };
+
+    window.importBackupJSON = function(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const parsed = JSON.parse(e.target.result);
+          if (parsed && Array.isArray(parsed.students)) {
+            appData.students = parsed.students.map(s => ({ ...s, teacherId: currentTeacher ? currentTeacher.uid : '' }));
+            appData.attendanceByDate = parsed.attendanceByDate || {};
+            saveAppData("Imported Backup");
+            refreshAllViews();
+            showToast('Backup restored!');
+          }
+        } catch (err) { showToast('Invalid backup file!'); }
+      };
+      reader.readAsText(file);
+    };
+
+    function refreshAllViews() {
+      renderDashboard(); renderAttendanceList(); renderFeesList(); renderStudentsDirectory();
+    }
+
+    let toastTimer;
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toastMsg').textContent = msg;
+      toast.classList.remove('opacity-0', '-translate-y-2'); toast.classList.add('opacity-100', 'translate-y-0');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => { toast.classList.add('opacity-0', '-translate-y-2'); toast.classList.remove('opacity-100', 'translate-y-0'); }, 2800);
+    }
+
+    document.getElementById('attendanceDateInput').value = selectedDate;
+    lucide.createIcons();
+  </script>
+</body>
+</html>
